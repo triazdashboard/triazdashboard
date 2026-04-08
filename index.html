@@ -283,6 +283,7 @@
       frigo: '#4c7dff',
       mensa: '#33d17a',
       charger: '#f6c344',
+      edificio: '#a78bfa',
       cyan: '#45d4ff',
       grid: 'rgba(255,255,255,0.08)',
       text: '#eaf2ff',
@@ -519,9 +520,10 @@
       const series = [];
 
       const seriesMap = [
-        { key: 'Gruppo Frigo', color: COLORS.frigo },
-        { key: 'Mensa', color: COLORS.mensa },
-        { key: 'Colonnina Auto', color: COLORS.charger }
+        { key: 'Consumo Gruppi Frigo',    color: COLORS.frigo },
+        { key: 'Consumo Mensa',           color: COLORS.mensa },
+        { key: 'Ricarica Auto Elettriche', color: COLORS.charger },
+        { key: 'Consumo Edificio',        color: COLORS.edificio }
       ];
 
       for (const entry of seriesMap) {
