@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-04-14 09:43",
+  "updated_at": "2026-04-14 10:28",
   "totale_vs_fv": {
-    "consumo": 0,
-    "fotovoltaico": 0
+    "consumo": 6627,
+    "fotovoltaico": 2656
   },
   "consumo_totale": [
     {
