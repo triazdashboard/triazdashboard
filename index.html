@@ -42,6 +42,11 @@
     .ratio-kpi-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
     .ratio-kpi-value { font-size: 22px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
     .ratio-kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+    .ratio-period {
+      font-size: 22px; font-weight: 800; color: var(--text);
+      letter-spacing: 0.04em; flex-shrink: 0; line-height: 1;
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -109,7 +114,10 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
     <div id="dashboard" style="display:none;">
 
       <div class="card">
-        <div class="card-head"><span class="card-title">Totale vs Fotovoltaico (24H)</span></div>
+        <div class="card-head">
+          <span class="card-title">Riepilogo Consumi e Produzione</span>
+          <span class="ratio-period">24H</span>
+        </div>
         <div class="card-body ratio-card-body">
           <div id="chart-ratio-24h" class="chart"></div>
           <div class="ratio-kpis" id="kpis-ratio-24h"></div>
@@ -117,7 +125,10 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       </div>
 
       <div class="card">
-        <div class="card-head"><span class="card-title">Totale vs Fotovoltaico (7D)</span></div>
+        <div class="card-head">
+          <span class="card-title">Riepilogo Consumi e Produzione</span>
+          <span class="ratio-period">7D</span>
+        </div>
         <div class="card-body ratio-card-body">
           <div id="chart-ratio-7d" class="chart"></div>
           <div class="ratio-kpis" id="kpis-ratio-7d"></div>
@@ -125,7 +136,10 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       </div>
 
       <div class="card">
-        <div class="card-head"><span class="card-title">Totale vs Fotovoltaico (30D)</span></div>
+        <div class="card-head">
+          <span class="card-title">Riepilogo Consumi e Produzione</span>
+          <span class="ratio-period">30D</span>
+        </div>
         <div class="card-body ratio-card-body">
           <div id="chart-ratio-30d" class="chart"></div>
           <div class="ratio-kpis" id="kpis-ratio-30d"></div>
@@ -283,12 +297,16 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       iconOv.innerHTML = '<svg style="width:34px;height:34px;fill:#f6c344;filter:drop-shadow(0 0 6px rgba(246,195,68,0.6))" viewBox="0 0 260 244"><use href="#icon-solar"/></svg>';
       chartEl.appendChild(iconOv);
       var consumoOv = document.createElement('div');
-      consumoOv.style.cssText = 'position:absolute;bottom:10px;left:10px;z-index:1;pointer-events:none;font-size:13px;font-weight:700;color:#b2c3de;letter-spacing:0.02em;line-height:1;';
-      consumoOv.textContent = fmtEnergy(consumo);
+      consumoOv.style.cssText = 'position:absolute;bottom:8px;left:10px;z-index:1;pointer-events:none;line-height:1.2;';
+      consumoOv.innerHTML =
+        '<div style="font-size:9px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Consumo Totale</div>' +
+        '<div style="font-size:13px;font-weight:700;color:#b2c3de;letter-spacing:0.02em;">' + fmtEnergy(consumo) + '</div>';
       chartEl.appendChild(consumoOv);
       var fvOv = document.createElement('div');
-      fvOv.style.cssText = 'position:absolute;bottom:10px;right:10px;z-index:1;pointer-events:none;font-size:13px;font-weight:700;color:#f6c344;letter-spacing:0.02em;line-height:1;text-align:right;';
-      fvOv.textContent = fmtEnergy(fv);
+      fvOv.style.cssText = 'position:absolute;bottom:8px;right:10px;z-index:1;pointer-events:none;line-height:1.2;text-align:right;';
+      fvOv.innerHTML =
+        '<div style="font-size:9px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Produzione FV</div>' +
+        '<div style="font-size:13px;font-weight:700;color:#f6c344;letter-spacing:0.02em;">' + fmtEnergy(fv) + '</div>';
       chartEl.appendChild(fvOv);
 
       return chart;
