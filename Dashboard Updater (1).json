@@ -1,0 +1,955 @@
+{
+  "name": "Dashboard Updater",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "sender": "notification@eh-iwms.com"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        42256,
+        -1856
+      ],
+      "id": "4daf12b3-8886-4a2e-b526-7025b1b773a1",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UpByhntwPbDrTCwO",
+          "name": "Gmail account triazdashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const binaryData = $input.item.binary;\n\nif (!binaryData) return [];\n\n// Cerca allegato con nome che contiene il report occupazione\nconst key = Object.keys(binaryData).find(k => \n  binaryData[k].fileName?.includes(\"Occupazione Workspace dal mese scorso\") ||\n  binaryData[k].fileName?.includes(\"Occupazione_Workspace_dal_mese_scorso\")\n);\n\nif (!key) return [];\n\nreturn [{\n  json: $input.item.json,\n  binary: { attachment: binaryData[key] }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        42656,
+        -2752
+      ],
+      "id": "0bfecde1-aff0-4280-8daa-9ef2aa2ed251",
+      "name": "TRADUCI EXCEL"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "attachment",
+        "options": {
+          "range": "A5:H1000"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        43056,
+        -2752
+      ],
+      "id": "2a13f6fd-e44b-47e4-9e10-00cbfcc9436b",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "function pad2(value) {\n  return String(value).padStart(2, '0');\n}\n\nfunction toNumber(value, defaultValue = 0) {\n  if (value === null || value === undefined || value === '') return defaultValue;\n  const n = Number(String(value).replace(',', '.').trim());\n  return Number.isFinite(n) ? n : defaultValue;\n}\n\nfunction parseDate(value) {\n  if (!value) return null;\n\n  // Excel serial number (e.g. 46083)\n  if (typeof value === 'number' || (typeof value === 'string' && /^\\d{5}$/.test(value.trim()))) {\n    const serial = Number(value);\n    if (serial > 40000 && serial < 60000) {\n      // Excel epoch: 1899-12-30\n      const d = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);\n      return Number.isNaN(d.getTime()) ? null : d;\n    }\n  }\n\n  const s = String(value).trim();\n\n  // ISO datetime: 2026-03-02 00:00:00 or 2026-03-02T...\n  const isoMatch = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n  if (isoMatch) {\n    const d = new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T00:00:00`);\n    return Number.isNaN(d.getTime()) ? null : d;\n  }\n\n  // Italian format: dd-mm-yyyy or dd/mm/yyyy\n  const itMatch = s.match(/^(\\d{2})[-\\/](\\d{2})[-\\/](\\d{4})$/);\n  if (itMatch) {\n    const d = new Date(`${itMatch[3]}-${itMatch[2]}-${itMatch[1]}T00:00:00`);\n    return Number.isNaN(d.getTime()) ? null : d;\n  }\n\n  return null;\n}\n\nfunction formatISODate(dateObj) {\n  const yyyy = dateObj.getUTCFullYear();\n  const mm = pad2(dateObj.getUTCMonth() + 1);\n  const dd = pad2(dateObj.getUTCDate());\n  return `${yyyy}-${mm}-${dd}`;\n}\n\nconst rows = $input.all().map(item => item.json);\nconst grouped = new Map();\n\nfor (const row of rows) {\n  const rawDate     = row[\"Data\"];\n  const sede        = row[\"Edificio\"];\n  const liberiRaw   = row[\"Numero Totale Locali Non Occupati\"];\n  const occupatiRaw = row[\"Numero Totale Locali Occupati\"];\n  const tipologia   = row[\"Tipologia\"];\n  const fiscalPeriod = row[\"Fiscal Period\"];\n\n  if (!rawDate || !sede) continue;\n  if (rawDate === 'Data') continue;\n\n  const parsedDate = parseDate(rawDate);\n  if (!parsedDate) continue;\n\n  if (String(tipologia || '').trim() !== 'Workplace') continue;\n\n  const occupati = toNumber(occupatiRaw, 0);\n  const liberi   = toNumber(liberiRaw,   0);\n\n  const data = formatISODate(parsedDate);\n  const giorno = pad2(parsedDate.getUTCDate());\n  const sedeNormalizzata = String(sede).trim();\n  const key = `${data}__${sedeNormalizzata}`;\n\n  if (!grouped.has(key)) {\n    grouped.set(key, {\n      giorno,\n      data,\n      sede: sedeNormalizzata,\n      occupati: 0,\n      liberi: 0,\n      tipologia: String(tipologia || '').trim(),\n      fiscal_period: fiscalPeriod ? String(fiscalPeriod).trim() : null\n    });\n  }\n\n  const current = grouped.get(key);\n  current.occupati += occupati;\n  current.liberi   += liberi;\n}\n\nconst records = Array.from(grouped.values())\n  .map(item => {\n    const totale = item.occupati + item.liberi;\n    const percentuale = totale > 0\n      ? Math.round((item.occupati / totale) * 1000) / 10\n      : 0;\n\n    return {\n      giorno: item.giorno,\n      data: item.data,\n      sede: item.sede,\n      occupati: item.occupati,\n      liberi: item.liberi,\n      percentuale,\n      tipologia: item.tipologia,\n      fiscal_period: item.fiscal_period\n    };\n  })\n  .sort((a, b) => {\n    if (a.data === b.data) {\n      return a.sede.localeCompare(b.sede, 'it');\n    }\n    return a.data.localeCompare(b.data);\n  });\n\nreturn records.map(record => ({\n  json: record\n}));"
+      },
+      "id": "1b07662c-823a-47dc-a9f9-f8b7526c4fcc",
+      "name": "Parse - Estrai Misure OCCUPANCY RATE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        43456,
+        -2752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseISODate(value) {\n  if (!value) return null;\n  const d = new Date(`${value}T00:00:00`);\n  return Number.isNaN(d.getTime()) ? null : d;\n}\n\nfunction startOfDay(date) {\n  const d = new Date(date);\n  d.setHours(0, 0, 0, 0);\n  return d;\n}\n\nconst today = startOfDay(new Date());\nconst minDate = new Date(today);\nminDate.setDate(minDate.getDate() - 29); // oggi compreso = 30 giorni totali\n\nconst filtered = $input.all()\n  .map(item => item.json)\n  .filter(record => {\n    const d = parseISODate(record.data);\n    if (!d) return false;\n    return d >= minDate && d <= today;\n  })\n  .sort((a, b) => {\n    if (a.data === b.data) {\n      return String(a.sede || '').localeCompare(String(b.sede || ''), 'it');\n    }\n    return a.data.localeCompare(b.data);\n  });\n\nreturn filtered.map(record => ({ json: record }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        43856,
+        -2752
+      ],
+      "id": "c4f6ba5c-ac52-4b1e-86d8-553349cfc3d0",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "jsCode": "function pad2(value) {\n  return String(value).padStart(2, '0');\n}\n\nfunction toISODate(date) {\n  const yyyy = date.getFullYear();\n  const mm = pad2(date.getMonth() + 1);\n  const dd = pad2(date.getDate());\n  return `${yyyy}-${mm}-${dd}`;\n}\n\nfunction startOfDay(date) {\n  const d = new Date(date);\n  d.setHours(0, 0, 0, 0);\n  return d;\n}\n\nfunction isWeekend(date) {\n  const day = date.getDay(); // 0 domenica, 6 sabato\n  return day === 0 || day === 6;\n}\n\nconst rows = $input.all().map(item => item.json);\n\n// Trova tutte le sedi presenti nei dati\nconst sedi = [...new Set(rows.map(r => String(r.sede || '').trim()).filter(Boolean))];\n\n// Indicizza i record esistenti per data+sede\nconst recordMap = new Map();\nfor (const row of rows) {\n  const key = `${row.data}__${row.sede}`;\n  recordMap.set(key, row);\n}\n\n// Ultimi 30 giorni incluso oggi\nconst today = startOfDay(new Date());\nconst days = [];\nfor (let i = 29; i >= 0; i--) {\n  const d = new Date(today);\n  d.setDate(today.getDate() - i);\n  days.push(d);\n}\n\nconst output = [];\n\nfor (const sede of sedi) {\n  for (const d of days) {\n    const data = toISODate(d);\n    const giorno = pad2(d.getDate());\n    const weekend = isWeekend(d);\n    const key = `${data}__${sede}`;\n    const existing = recordMap.get(key);\n\n    if (existing) {\n      output.push({\n        json: {\n          giorno: existing.giorno || giorno,\n          data: existing.data || data,\n          sede: existing.sede || sede,\n          occupati: existing.occupati ?? null,\n          liberi: existing.liberi ?? null,\n          percentuale: existing.percentuale ?? null,\n          tipologia: existing.tipologia ?? 'Workplace',\n          fiscal_period: existing.fiscal_period ?? null,\n          is_weekend: weekend,\n          has_data: true\n        }\n      });\n    } else {\n      output.push({\n        json: {\n          giorno,\n          data,\n          sede,\n          occupati: null,\n          liberi: null,\n          percentuale: null,\n          tipologia: 'Workplace',\n          fiscal_period: null,\n          is_weekend: weekend,\n          has_data: false\n        }\n      });\n    }\n  }\n}\n\noutput.sort((a, b) => {\n  if (a.json.sede === b.json.sede) {\n    return a.json.data.localeCompare(b.json.data);\n  }\n  return a.json.sede.localeCompare(b.json.sede, 'it');\n});\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        44256,
+        -2752
+      ],
+      "id": "fc3a4760-cbac-48c1-be77-66d8e94f8dd7",
+      "name": "Code in JavaScript6"
+    },
+    {
+      "parameters": {
+        "jsCode": "function pad2(value) {\n  return String(value).padStart(2, '0');\n}\n\nfunction formatUpdatedAt(date = new Date()) {\n  const d = new Date(date);\n  const yyyy = d.getFullYear();\n  const mm = pad2(d.getMonth() + 1);\n  const dd = pad2(d.getDate());\n  const hh = pad2(d.getHours());\n  const mi = pad2(d.getMinutes());\n  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;\n}\n\nconst rows = $input.all().map(item => item.json);\n\nconst grouped = new Map();\n\nfor (const row of rows) {\n  const sede = String(row.sede || '').trim();\n  if (!sede) continue;\n\n  if (!grouped.has(sede)) {\n    grouped.set(sede, []);\n  }\n\n  grouped.get(sede).push({\n    day: row.giorno,\n    date: row.data,\n    occupied: row.occupati,\n    free: row.liberi,\n    percentage: row.percentuale,\n    is_weekend: row.is_weekend === true,\n    has_data: row.has_data === true\n  });\n}\n\nconst cities = Array.from(grouped.entries())\n  .sort((a, b) => a[0].localeCompare(b[0], 'it'))\n  .map(([siteName, records]) => ({\n    site_name: siteName,\n    month_label: 'Ultimi 30 giorni',\n    occupancy_daily: records.sort((a, b) => a.date.localeCompare(b.date))\n  }));\n\nreturn [\n  {\n    json: {\n      updated_at: formatUpdatedAt(),\n      range_label: 'Ultimi 30 giorni',\n      cities\n    }\n  }\n];"
+      },
+      "id": "faefed22-823f-465e-b868-5e143f97420f",
+      "name": "Build - Costruisci JSON Dashboard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        44656,
+        -2752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function b64(obj) {\n  return Buffer.from(JSON.stringify(obj, null, 2)).toString('base64');\n}\n\n// Se il node precedente restituisce un solo item con il JSON finale dashboard\nconst dashboardJson = $input.first().json;\n\nreturn [\n  {\n    json: {\n      filename: 'data/data_occupancy_mensile_wp.json',\n      base64Content: b64(dashboardJson)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        45056,
+        -2752
+      ],
+      "id": "f9cf779e-ad8c-4f82-88ac-5a22ce99eaff",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const binaryData = $input.item.binary;\nif (!binaryData) return [];\nconst key = Object.keys(binaryData).find(k =>\n  binaryData[k].fileName?.includes(\"Occupazione Mensile Workspace\") ||\n  binaryData[k].fileName?.includes(\"Occupazione_Mensile_Workspace\") ||\n  binaryData[k].fileName?.includes(\"anno_corrente\")\n);\nif (!key) return [];\nreturn [{ json: {}, binary: { attachment: binaryData[key] } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        42656,
+        -2160
+      ],
+      "id": "ce4325b9-6ef1-4276-81e4-beeecd23a745",
+      "name": "TRADUCI: Annuale"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "attachment",
+        "options": {
+          "range": "A5:H2000"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        43056,
+        -2160
+      ],
+      "id": "4e1c0f16-186a-4df7-a250-acf8b734c0bb",
+      "name": "Extract Annuale"
+    },
+    {
+      "parameters": {
+        "jsCode": "function pad2(v){return String(v).padStart(2,'0');}\nfunction fmt(d=new Date()){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}\nconst ML={1:'Gen',2:'Feb',3:'Mar',4:'Apr',5:'Mag',6:'Giu',7:'Lug',8:'Ago',9:'Set',10:'Ott',11:'Nov',12:'Dic'};\nfunction toNum(v,def=0){if(v===null||v===undefined||v==='')return def;const n=Number(String(v).replace(',','.').trim());return Number.isFinite(n)?n:def;}\nfunction parseDate(value){\n  if(!value)return null;\n  if(typeof value==='number'||(typeof value==='string'&&/^\\d{5}$/.test(String(value).trim()))){\n    const s=Number(value);if(s>40000&&s<60000){const d=new Date(Date.UTC(1899,11,30)+s*86400000);return isNaN(d.getTime())?null:d;}}\n  const str=String(value).trim();\n  const m=str.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m){const d=new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);return isNaN(d.getTime())?null:d;}\n  const it=str.match(/^(\\d{2})[-\\/](\\d{2})[-\\/](\\d{4})$/);if(it){const d=new Date(`${it[3]}-${it[2]}-${it[1]}T00:00:00`);return isNaN(d.getTime())?null:d;}\n  return null;}\nconst rows=$input.all().map(i=>i.json);\nconst cities={};\nfor(const row of rows){\n  const sede=String(row['Edificio']||'').trim();\n  const tipo=String(row['Tipologia']||'').trim();\n  if(!sede||tipo!=='Workplace'||row['Data']==='Data')continue;\n  const dateObj=parseDate(row['Data']);if(!dateObj)continue;\n  const yr=dateObj.getUTCFullYear(),mo=dateObj.getUTCMonth()+1;\n  const period=`${yr}-${pad2(mo)}`,dateStr=`${yr}-${pad2(mo)}-${pad2(dateObj.getUTCDate())}`;\n  const occ=toNum(row['Numero Totale Locali Occupati']),book=toNum(row['Numero Totale Locali Prenotabili']);\n  if(!cities[sede])cities[sede]={};\n  if(!cities[sede][yr])cities[sede][yr]={};\n  if(!cities[sede][yr][period])cities[sede][yr][period]={dates:new Set(),occ_sum:0,book_sum:0,month:mo};\n  cities[sede][yr][period].dates.add(dateStr);\n  cities[sede][yr][period].occ_sum+=occ;\n  cities[sede][yr][period].book_sum+=book;}\nconst result={updated_at:fmt(),cities:Object.keys(cities).sort().map(site=>({\n  site_name:site,years:Object.keys(cities[site]).sort().map(yr=>({\n    year:Number(yr),months:Object.keys(cities[site][yr]).sort().map(period=>{\n      const d=cities[site][yr][period],w=d.dates.size;\n      const avgO=w>0?Math.round(d.occ_sum/w*10)/10:0,avgB=w>0?Math.round(d.book_sum/w*10)/10:0;\n      return{period,label:ML[d.month],avg_occupied:avgO,avg_bookable:avgB,\n             avg_occupancy_pct:avgB>0?Math.round(avgO/avgB*1000)/10:0,working_days:w};})}))}))};\nreturn[{json:{filename:'data/data_occupancy_annuale.json',base64Content:Buffer.from(JSON.stringify(result,null,2)).toString('base64')}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        43456,
+        -2160
+      ],
+      "id": "02796f03-5d37-4f3a-8b86-70e929e45916",
+      "name": "Build Annuale"
+    },
+    {
+      "parameters": {
+        "jsCode": "const binaryData = $input.item.binary;\nif (!binaryData) return [];\nconst key = Object.keys(binaryData).find(k =>\n  binaryData[k].fileName?.includes(\"Occupazione_meeting_room_ultimi\") ||\n  binaryData[k].fileName?.includes(\"ultimi_30_giorni\") ||\n  binaryData[k].fileName?.includes(\"ultimi 30 giorni\")\n);\nif (!key) return [];\nreturn [{ json: {}, binary: { attachment: binaryData[key] } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        42656,
+        -1552
+      ],
+      "id": "d2e00d88-1322-43d2-a0f4-6fdb799a44cf",
+      "name": "TRADUCI: Meeting 30gg"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "attachment",
+        "options": {
+          "range": "A5:M2000"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        43056,
+        -1552
+      ],
+      "id": "e76b39e7-0f4a-42f6-81c6-de8a0c1178b4",
+      "name": "Extract Meeting 30gg"
+    },
+    {
+      "parameters": {
+        "jsCode": "function pad2(v){return String(v).padStart(2,'0');}\nfunction fmt(d=new Date()){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}\nfunction parseDate(value){\n  if(!value)return null;\n  if(typeof value==='number'||(typeof value==='string'&&/^\\d{5}$/.test(String(value).trim()))){\n    const s=Number(value);if(s>40000&&s<60000){const d=new Date(Date.UTC(1899,11,30)+s*86400000);return isNaN(d.getTime())?null:d;}}\n  const str=String(value).trim();\n  const m=str.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m){const d=new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);return isNaN(d.getTime())?null:d;}\n  return null;}\nfunction toNum(v,def=0){if(v===null||v===undefined||v==='')return def;const n=Number(String(v).replace(',','.').trim());return Number.isFinite(n)?n:def;}\nconst rows=$input.all().map(i=>i.json);\nconst cities={};\nfor(const row of rows){\n  const edificio=String(row['Edificio']||'').trim(),sala=String(row['Sala Riunione']||'').trim();\n  if(!edificio||!sala)continue;\n  const lav=row['Lavorativo'];\n  if(lav!==true&&lav!=='TRUE'&&lav!=='True')continue;\n  const dateObj=parseDate(row['Data']);if(!dateObj)continue;\n  const dateStr=`${dateObj.getUTCFullYear()}-${pad2(dateObj.getUTCMonth()+1)}-${pad2(dateObj.getUTCDate())}`;\n  const dayName=String(row['Day Name']||'').trim();\n  const oreDisp=toNum(row['Ore Disponibili']),oreBook=toNum(row['Ore Prenotate']),capMax=toNum(row['Occupazione Massima']);\n  if(!cities[edificio])cities[edificio]={};\n  if(!cities[edificio][sala])cities[edificio][sala]={total_avail:0,total_booked:0,max_cap:0,days:{}};\n  const r=cities[edificio][sala];\n  r.total_avail+=oreDisp;r.total_booked+=oreBook;r.max_cap=Math.max(r.max_cap,capMax);\n  r.days[dateStr]={date:dateStr,day_name:dayName,available_hours:oreDisp,booked_hours:oreBook,\n    booking_rate_pct:oreDisp>0?Math.round(oreBook/oreDisp*1000)/10:0};}\nconst result={updated_at:fmt(),range_label:'Ultimi 30 giorni lavorativi',\n  cities:Object.keys(cities).sort().map(site=>({site_name:site,\n    rooms:Object.keys(cities[site]).map(room=>{const r=cities[site][room];\n      return{room_name:room,total_available_hours:r.total_avail,total_booked_hours:r.total_booked,\n        booking_rate_pct:r.total_avail>0?Math.round(r.total_booked/r.total_avail*1000)/10:0,\n        max_capacity:r.max_cap,days:Object.values(r.days).sort((a,b)=>b.date.localeCompare(a.date))};\n    }).sort((a,b)=>b.booking_rate_pct-a.booking_rate_pct)}))};\nreturn[{json:{filename:'data/data_meeting_30gg.json',base64Content:Buffer.from(JSON.stringify(result,null,2)).toString('base64')}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        43456,
+        -1552
+      ],
+      "id": "60ac9412-2efd-4834-9ea6-ca55b9d7cfbd",
+      "name": "Build Meeting 30gg"
+    },
+    {
+      "parameters": {
+        "jsCode": "const binaryData = $input.item.binary;\nif (!binaryData) return [];\nconst key = Object.keys(binaryData).find(k =>\n  binaryData[k].fileName?.includes(\"Occupazione_meeting_room_ultima_settimana\") ||\n  binaryData[k].fileName?.includes(\"ultima_settimana\") ||\n  binaryData[k].fileName?.includes(\"ultima settimana\")\n);\nif (!key) return [];\nreturn [{ json: {}, binary: { attachment: binaryData[key] } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        42656,
+        -960
+      ],
+      "id": "567b8bbc-39e7-4e2f-a67a-3fd958f24778",
+      "name": "TRADUCI: Meeting Settimana"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "attachment",
+        "options": {
+          "range": "A5:M2000"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        43056,
+        -960
+      ],
+      "id": "30254b4b-c9b5-45e8-a485-05c253094991",
+      "name": "Extract Meeting Settimana"
+    },
+    {
+      "parameters": {
+        "jsCode": "function pad2(v){return String(v).padStart(2,'0');}\nfunction fmt(d=new Date()){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}\nfunction parseDate(value){\n  if(!value)return null;\n  if(typeof value==='number'||(typeof value==='string'&&/^\\d{5}$/.test(String(value).trim()))){\n    const s=Number(value);if(s>40000&&s<60000){const d=new Date(Date.UTC(1899,11,30)+s*86400000);return isNaN(d.getTime())?null:d;}}\n  const str=String(value).trim();\n  const m=str.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m){const d=new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);return isNaN(d.getTime())?null:d;}\n  return null;}\nfunction toNum(v,def=0){if(v===null||v===undefined||v==='')return def;const n=Number(String(v).replace(',','.').trim());return Number.isFinite(n)?n:def;}\nconst rows=$input.all().map(i=>i.json);\nconst cities={};\nfor(const row of rows){\n  const edificio=String(row['Edificio']||'').trim(),sala=String(row['Sala Riunione']||'').trim();\n  if(!edificio||!sala)continue;\n  const lav=row['Lavorativo'];\n  if(lav!==true&&lav!=='TRUE'&&lav!=='True')continue;\n  const dateObj=parseDate(row['Data']);if(!dateObj)continue;\n  const dateStr=`${dateObj.getUTCFullYear()}-${pad2(dateObj.getUTCMonth()+1)}-${pad2(dateObj.getUTCDate())}`;\n  const dayName=String(row['Day Name']||'').trim();\n  const oreDisp=toNum(row['Ore Disponibili']),oreBook=toNum(row['Ore Prenotate']),capMax=toNum(row['Occupazione Massima']);\n  if(!cities[edificio])cities[edificio]={};\n  if(!cities[edificio][sala])cities[edificio][sala]={total_avail:0,total_booked:0,max_cap:0,days:{}};\n  const r=cities[edificio][sala];\n  r.total_avail+=oreDisp;r.total_booked+=oreBook;r.max_cap=Math.max(r.max_cap,capMax);\n  r.days[dateStr]={date:dateStr,day_name:dayName,available_hours:oreDisp,booked_hours:oreBook,\n    booking_rate_pct:oreDisp>0?Math.round(oreBook/oreDisp*1000)/10:0};}\nconst result={updated_at:fmt(),range_label:'Ultima settimana',\n  cities:Object.keys(cities).sort().map(site=>({site_name:site,\n    rooms:Object.keys(cities[site]).map(room=>{const r=cities[site][room];\n      return{room_name:room,total_available_hours:r.total_avail,total_booked_hours:r.total_booked,\n        booking_rate_pct:r.total_avail>0?Math.round(r.total_booked/r.total_avail*1000)/10:0,\n        max_capacity:r.max_cap,days:Object.values(r.days).sort((a,b)=>b.date.localeCompare(a.date))};\n    }).sort((a,b)=>b.booking_rate_pct-a.booking_rate_pct)}))};\nreturn[{json:{filename:'data/data_meeting_settimana.json',base64Content:Buffer.from(JSON.stringify(result,null,2)).toString('base64')}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        43456,
+        -960
+      ],
+      "id": "fd59a52a-b2e9-4cef-bef6-47b5de3b23ce",
+      "name": "Build Meeting Settimana"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        45456,
+        -2160
+      ],
+      "id": "ad939d9f-831c-411c-8694-5a0f4861c377",
+      "name": "Merge WP + Annuale"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        43856,
+        -1552
+      ],
+      "id": "2cbbdcfd-f072-4827-a3a6-13675f84ab4c",
+      "name": "Merge Meeting 30gg + Settimana"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        45856,
+        -1856
+      ],
+      "id": "54cd8227-4969-4c1b-9c43-3ccce2f6b4fb",
+      "name": "Merge Final 4 JSONs"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        46256,
+        -1856
+      ],
+      "id": "e4f21803-425e-4d24-9db4-be703d13023a",
+      "name": "Loop Upload Occupancy"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "triazdashboard",
+          "mode": "list",
+          "cachedResultName": "triazdashboard",
+          "cachedResultUrl": "https://github.com/triazdashboard"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "occupancy-dashboard",
+          "mode": "list",
+          "cachedResultName": "occupancy-dashboard",
+          "cachedResultUrl": "https://github.com/triazdashboard/occupancy-dashboard"
+        },
+        "filePath": "={{ $json.filename }}",
+        "fileContent": "={{ $json.base64Content }}",
+        "commitMessage": "=Aggiorna {{$json.filename}}"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        46656,
+        -1856
+      ],
+      "id": "ee9d8fd7-6e08-4716-9a6b-5e68ac31eddc",
+      "name": "Edit a file1",
+      "webhookId": "34dc7550-d696-4632-ad93-f99f68f8b745",
+      "credentials": {
+        "githubApi": {
+          "id": "AC8g88y70abHCOXL",
+          "name": "GitHub account triazdashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const binaryData = $('Gmail Trigger').first().binary;\n\n\nif (!binaryData) return [];\n\n// Trova la chiave binaria il cui nome file contiene la stringa cercata\nconst key = Object.keys(binaryData).find(k => \n  binaryData[k].fileName?.includes(\"dati in arrivo dai sensori\")\n);\n\nif (!key) return [];\n\nreturn {\n  json: {},\n  binary: { attachment: binaryData[key] }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47168,
+        -2256
+      ],
+      "id": "99b51db1-693b-41c8-888b-d8bd6c8da39c",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "attachment",
+        "options": {
+          "range": "A5:F10000"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        47584,
+        -2256
+      ],
+      "id": "782de1ac-a197-4a88-befd-10fca1b2ab65",
+      "name": "Extract from File Sensori"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ------------------------------------------------------------\n// PARSE SENSORI XLSX -> record energia (kWh)\n// Robusto contro:\n// - Body/body mancante\n// - righe con payload \"devices\" senza \"items\"\n// - iName con underscore/spazi/maiuscole diverse\n// - numeri come stringhe con virgola\n// - sn mancante ma li presente\n// - timestamp sporchi / orari da regolarizzare all'ora piena\n// ------------------------------------------------------------\n\nconst allItems = $input.all();\n\n// Mappa principale sensori\nconst SENSOR_MAP = {\n  TOTAL_POWER: 'TOTAL_POWER',\n  CANTEEN_POWER: 'CANTEEN_POWER',\n  FV_POWER: 'FV_POWER',\n  HEAT_POWER: 'HEAT_POWER',\n  CAR_CHARGER: 'CAR_CHARGER',\n};\n\n// Fallback sui codici li visti nel file\nconst LI_TO_SN = {\n  '04B201': 'TOTAL_POWER',\n  '04B301': 'CANTEEN_POWER',\n  'FFFE03': 'FV_POWER',\n  'FFFE02': 'HEAT_POWER',\n  'FFFE01': 'CAR_CHARGER',\n};\n\nfunction normalizeText(value) {\n  return String(value ?? '')\n    .normalize('NFKD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '');\n}\n\nfunction parseNumber(value) {\n  if (value === null || value === undefined || value === '') return null;\n  if (typeof value === 'number') return Number.isFinite(value) ? value : null;\n\n  let s = String(value).trim();\n  if (!s) return null;\n\n  if (s.includes(',') && s.includes('.')) {\n    s = s.replace(/\\./g, '').replace(',', '.');\n  } else if (s.includes(',')) {\n    s = s.replace(',', '.');\n  }\n\n  const n = parseFloat(s);\n  return Number.isFinite(n) ? n : null;\n}\n\nfunction parseJsonSafe(str) {\n  try {\n    return JSON.parse(String(str).trim());\n  } catch {\n    return null;\n  }\n}\n\nfunction findBodyString(row) {\n  const direct = row.Body ?? row.body ?? row.BODY ?? null;\n  if (typeof direct === 'string' && direct.trim().startsWith('{')) return direct.trim();\n\n  for (const value of Object.values(row)) {\n    if (typeof value !== 'string') continue;\n    const v = value.trim();\n    if (!v.startsWith('{')) continue;\n    if (\n      v.includes('\"items\"') ||\n      v.includes('\"devices\"') ||\n      v.includes('\"hn\"') ||\n      v.includes('\"sn\"')\n    ) {\n      return v;\n    }\n  }\n\n  return null;\n}\n\nfunction getCanonicalSn(device) {\n  const sn = String(device?.sn ?? '').trim();\n  const li = String(device?.li ?? '').trim();\n\n  if (SENSOR_MAP[sn]) return SENSOR_MAP[sn];\n  if (LI_TO_SN[li]) return LI_TO_SN[li];\n\n  return null;\n}\n\nfunction isPositiveEnergyMeasure(measure) {\n  const name = normalizeText(measure?.iName);\n  if (!name) return false;\n\n  if (name.includes('rea')) return false;\n  if (name.includes('reatt')) return false;\n  if (name.includes('react')) return false;\n\n  if (name === 'energiaattivapositiva') return true;\n  if (name === 'energiatrifaseattpositiva') return true;\n\n  return name.includes('energia') && name.includes('positiva');\n}\n\nfunction pickEnergyMeasure(ms) {\n  if (!Array.isArray(ms) || ms.length === 0) return null;\n\n  const exact = ms.find(isPositiveEnergyMeasure);\n  if (exact) return exact;\n\n  const soft = ms.find(m => {\n    const name = normalizeText(m?.iName);\n    return name.includes('energia') && !name.includes('rea') && !name.includes('reatt');\n  });\n  if (soft) return soft;\n\n  return null;\n}\n\nfunction pickTimestamp(payload, device, energyMeasure) {\n  return (\n    energyMeasure?.ts ||\n    (Array.isArray(device?.ms) && device.ms.find(m => m?.ts)?.ts) ||\n    payload?.ts ||\n    new Date().toISOString()\n  );\n}\n\n// Pulisce e regolarizza il timestamp all'ora piena:\n// - minuti 00-29 => stessa ora :00\n// - minuti 30-59 => ora successiva :00\nfunction normalizeTimestamp(rawTs) {\n  if (rawTs === null || rawTs === undefined || rawTs === '') {\n    return new Date().toISOString();\n  }\n\n  let s = String(rawTs).trim();\n\n  // pulizia base\n  s = s\n    .replace(/\\//g, '-')              // 2026/03/25 -> 2026-03-25\n    .replace(' ', 'T')                // 2026-03-25 10:15:00 -> 2026-03-25T10:15:00\n    .replace(/\\.\\d+Z$/, 'Z')          // rimuove millisecondi eccessivi finali se presenti\n    .replace(/\\.\\d+$/, '');           // rimuove millisecondi senza Z\n\n  let d = new Date(s);\n\n  // fallback semplice per formati non perfetti\n  if (isNaN(d.getTime())) {\n    const alt = s.replace('T', ' ');\n    d = new Date(alt);\n  }\n\n  if (isNaN(d.getTime())) {\n    return new Date().toISOString();\n  }\n\n  const minutes = d.getMinutes();\n\n  // azzera minuti/secondi/ms\n  d.setMinutes(0, 0, 0);\n\n  // se da 30 a 59, porta all'ora successiva\n  if (minutes >= 30) {\n    d.setHours(d.getHours() + 1);\n  }\n\n  return d.toISOString();\n}\n\nconst records = [];\nconst stats = {\n  totalRows: allItems.length,\n  parsedPayloads: 0,\n  skippedNoBody: 0,\n  skippedBadJson: 0,\n  skippedNoItems: 0,\n  skippedUnknownSensor: 0,\n  skippedNoEnergy: 0,\n};\n\nfor (let index = 0; index < allItems.length; index++) {\n  const row = allItems[index].json;\n\n  const bodyStr = findBodyString(row);\n  if (!bodyStr) {\n    stats.skippedNoBody++;\n    continue;\n  }\n\n  const payload = parseJsonSafe(bodyStr);\n  if (!payload) {\n    stats.skippedBadJson++;\n    continue;\n  }\n\n  stats.parsedPayloads++;\n\n  if (!Array.isArray(payload.items) || payload.items.length === 0) {\n    stats.skippedNoItems++;\n    continue;\n  }\n\n  for (const device of payload.items) {\n    const sn = getCanonicalSn(device);\n    if (!sn) {\n      stats.skippedUnknownSensor++;\n      continue;\n    }\n\n    const ms = Array.isArray(device.ms) ? device.ms : [];\n    const energyMeasure = pickEnergyMeasure(ms);\n\n    if (!energyMeasure) {\n      stats.skippedNoEnergy++;\n      continue;\n    }\n\n    const energy_kwh = parseNumber(energyMeasure.va);\n    if (energy_kwh === null) {\n      stats.skippedNoEnergy++;\n      continue;\n    }\n\n    const rawTs = pickTimestamp(payload, device, energyMeasure);\n    const ts = normalizeTimestamp(rawTs);\n\n    records.push({\n      ts,\n      sn,\n      energy_kwh,\n    });\n  }\n}\n\nif (records.length === 0) {\n  // Nessun dato sensori (allegato di errore o email non pertinente) — \n  // restituisce un sentinel per permettere al workflow di continuare\n  return [{ json: { _no_sensor_data: true, stats } }];\n}\n\nrecords.sort((a, b) => String(a.ts).localeCompare(String(b.ts)));\n\nreturn records.map(r => ({ json: r }));"
+      },
+      "id": "188eb9f2-337e-4fa0-8053-09aede4e04f2",
+      "name": "Parse - Estrai Misure Sensori",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48000,
+        -2256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────\n// BUILD JSON DASHBOARD\n// Legge tutti i readings dalla Data Table e produce:\n// - data/24h.json\n// - data/7d.json\n// - data/30d.json\n//\n// Assunzione: energy_kwh è un contatore cumulativo.\n// Consumo periodo = ultimo_valore_valido(periodo_fine)\n//                 - ultimo_valore_valido(periodo_inizio)\n//\n// Migliorie:\n// - usa solo energy_kwh\n// - più robusto contro dati sporchi / duplicati / reset\n// - 24H con dettaglio ora per ora\n// - 30D con 4 settimane esplicite retrospettive\n// - totale_vs_fv del 30D coerente con i bucket\n// ─────────────────────────────────────────────────────────\n\nconst allItems = $input.all();\n\n// ── Gestione assenza dati sensori ────────────────────────────────────────────\nconst firstItem = $input.first()?.json;\nif (firstItem?._no_sensor_data) {\n  const now = new Date();\n  const ts  = now.toISOString().slice(0,16).replace('T',' ');\n  function emptyJson(label) {\n    return {\n      updated_at: ts,\n      _no_data: true,\n      totale_vs_fv: { consumo: 0, fotovoltaico: 0 },\n      consumo_totale: [],\n      consumo_parziale: { labels: [], series: {} }\n    };\n  }\n  function b64e(obj){ return Buffer.from(JSON.stringify(obj,null,2)).toString('base64'); }\n  return [\n    { json: { filename: 'data/24h.json',  base64Content: b64e(emptyJson('24h'))  } },\n    { json: { filename: 'data/7d.json',   base64Content: b64e(emptyJson('7d'))   } },\n    { json: { filename: 'data/30d.json',  base64Content: b64e(emptyJson('30d'))  } },\n  ];\n}\n// ─────────────────────────────────────────────────────────────────────────────\n\n\n\nconst PARTIAL_SERIES = [\n  { sn: 'HEAT_POWER',    label: 'Consumo Gruppi Frigo' },\n  { sn: 'CANTEEN_POWER', label: 'Consumo Mensa' },\n  { sn: 'CAR_CHARGER',   label: 'Ricarica Auto Elettriche' },\n];\n\nconst DAY_IT = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];\n\n// ---------------------------------------------------------\n// Utility\n// ---------------------------------------------------------\nfunction parseNumber(value) {\n  if (value === null || value === undefined || value === '') return null;\n  if (typeof value === 'number') return Number.isFinite(value) ? value : null;\n\n  let s = String(value).trim();\n  if (!s) return null;\n\n  if (s.includes(',') && s.includes('.')) {\n    s = s.replace(/\\./g, '').replace(',', '.');\n  } else if (s.includes(',')) {\n    s = s.replace(',', '.');\n  }\n\n  const n = parseFloat(s);\n  return Number.isFinite(n) ? n : null;\n}\n\nfunction round0(n) {\n  return Math.round((n + Number.EPSILON));\n}\n\nfunction fmtUpdatedAt(d) {\n  return d.toISOString().slice(0, 16).replace('T', ' ');\n}\n\nfunction cloneDate(d) {\n  return new Date(d.getTime());\n}\n\nfunction startOfDay(d) {\n  const x = cloneDate(d);\n  x.setHours(0, 0, 0, 0);\n  return x;\n}\n\nfunction endOfDayExclusive(d) {\n  const x = startOfDay(d);\n  x.setDate(x.getDate() + 1);\n  return x;\n}\n\nfunction startOfHour(d) {\n  const x = cloneDate(d);\n  x.setMinutes(0, 0, 0);\n  return x;\n}\n\nfunction addHours(d, hours) {\n  return new Date(d.getTime() + hours * 3600 * 1000);\n}\n\nfunction addDays(d, days) {\n  return new Date(d.getTime() + days * 24 * 3600 * 1000);\n}\n\n// ---------------------------------------------------------\n// 1) Pulizia input\n// ---------------------------------------------------------\nconst readings = allItems\n  .map(i => {\n    const ts = new Date(i.json.ts);\n    const sn = String(i.json.sn || '').trim();\n    const energy = parseNumber(i.json.energy_kwh);\n\n    return {\n      ts,\n      sn,\n      energy_kwh: energy,\n    };\n  })\n  .filter(r =>\n    r.sn &&\n    !isNaN(r.ts.getTime()) &&\n    r.energy_kwh !== null &&\n    r.energy_kwh >= 0\n  );\n\nif (readings.length === 0) {\n  throw new Error('Nessun reading valido trovato nella Data Table.');\n}\n\n// ---------------------------------------------------------\n// 2) Raggruppa per sensore e ordina\n// ---------------------------------------------------------\nconst bySensor = new Map();\n\nfor (const r of readings) {\n  if (!bySensor.has(r.sn)) bySensor.set(r.sn, []);\n  bySensor.get(r.sn).push(r);\n}\n\nfor (const [sn, recs] of bySensor.entries()) {\n  recs.sort((a, b) => a.ts - b.ts);\n\n  const deduped = [];\n  for (const rec of recs) {\n    const prev = deduped[deduped.length - 1];\n    if (prev && prev.ts.getTime() === rec.ts.getTime()) {\n      deduped[deduped.length - 1] = rec;\n    } else {\n      deduped.push(rec);\n    }\n  }\n\n  bySensor.set(sn, deduped);\n}\n\n// ---------------------------------------------------------\n// 3) Accesso efficiente ai valori \"ultimo <= ts\"\n// ---------------------------------------------------------\nfunction latestBeforeOrAt(sn, ts) {\n  const recs = bySensor.get(sn) || [];\n  if (recs.length === 0) return null;\n\n  let lo = 0;\n  let hi = recs.length - 1;\n  let ans = -1;\n  const target = ts.getTime();\n\n  while (lo <= hi) {\n    const mid = Math.floor((lo + hi) / 2);\n    const t = recs[mid].ts.getTime();\n\n    if (t <= target) {\n      ans = mid;\n      lo = mid + 1;\n    } else {\n      hi = mid - 1;\n    }\n  }\n\n  return ans >= 0 ? recs[ans] : null;\n}\n\nfunction latestBeforeWithin(sn, ts, maxAgeMs) {\n  const rec = latestBeforeOrAt(sn, ts);\n  if (!rec) return null;\n  if ((ts.getTime() - rec.ts.getTime()) > maxAgeMs) return null;\n  return rec;\n}\n\nfunction deltaKwh(sn, fromTs, toTs, options = {}) {\n  const {\n    maxGapMs = null,\n    allowNegative = false,\n  } = options;\n\n  const start = maxGapMs === null\n    ? latestBeforeOrAt(sn, fromTs)\n    : latestBeforeWithin(sn, fromTs, maxGapMs);\n\n  const end = maxGapMs === null\n    ? latestBeforeOrAt(sn, toTs)\n    : latestBeforeWithin(sn, toTs, maxGapMs);\n\n  if (!start || !end) return 0;\n\n  let delta = end.energy_kwh - start.energy_kwh;\n\n  if (delta < 0 && !allowNegative) return 0;\n  if (Math.abs(delta) < 0.0001) return 0;\n\n  return delta;\n}\n\n// ---------------------------------------------------------\n// 4) Costruzione finestre temporali\n// ---------------------------------------------------------\nconst now = new Date();\n\n// 24H: giorno completo precedente all'ultima lettura disponibile\nconst hours24 = [];\n\n// Trova l'ultima timestamp tra tutti i sensori\nlet latestTs = new Date(0);\nfor (const [, recs] of bySensor.entries()) {\n  if (recs.length > 0) {\n    const last = recs[recs.length - 1].ts;\n    if (last > latestTs) latestTs = last;\n  }\n}\n\n// Giorno completo PRIMA dell'ultima lettura (dati sempre completi)\nconst lastReadingDay = startOfDay(latestTs);\nconst referenceStart = new Date(lastReadingDay.getTime() - 24 * 3600 * 1000);\n\nfor (let h = 0; h < 24; h++) {\n  const s = addHours(referenceStart, h);\n  const e = addHours(s, 1);\n  hours24.push({\n    label: String(s.getHours()).padStart(2, '0'),\n    s,\n    e,\n  });\n}\n\n// 7D: oggi incluso + 6 giorni precedenti, giorni calendario\nconst days7 = [];\nconst todayStart = startOfDay(now);\n\nfor (let d = 6; d >= 0; d--) {\n  const s = cloneDate(todayStart);\n  s.setDate(s.getDate() - d);\n  const e = endOfDayExclusive(s);\n\n  days7.push({\n    label: DAY_IT[s.getDay()],\n    s,\n    e,\n  });\n}\n\n// 30D: 4 finestre retrospettive esplicite\nconst weeks4 = [\n  {\n    label: 'W1',\n    s: addDays(now, -30),\n    e: addDays(now, -21),\n  },\n  {\n    label: 'W2',\n    s: addDays(now, -21),\n    e: addDays(now, -14),\n  },\n  {\n    label: 'W3',\n    s: addDays(now, -14),\n    e: addDays(now, -7),\n  },\n  {\n    label: 'W4',\n    s: addDays(now, -7),\n    e: now,\n  },\n];\n\n// ---------------------------------------------------------\n// 5) Builder helpers\n// ---------------------------------------------------------\nfunction buildTotals(fromTs, toTs, maxGapMs) {\n  return {\n    consumo: round0(deltaKwh('TOTAL_POWER', fromTs, toTs, { maxGapMs })),\n    fotovoltaico: round0(deltaKwh('FV_POWER', fromTs, toTs, { maxGapMs })),\n  };\n}\n\nfunction buildTotalSeries(slots, maxGapMs) {\n  return slots.map(sl => ({\n    label: sl.label,\n    value: round0(deltaKwh('TOTAL_POWER', sl.s, sl.e, { maxGapMs })),\n  }));\n}\n\nfunction buildPartialSeries(slots, maxGapMs) {\n  const labels = slots.map(sl => sl.label);\n  const series = {};\n\n  // Serie sensori fisici\n  for (const sensor of PARTIAL_SERIES) {\n    series[sensor.label] = slots.map(sl =>\n      round0(deltaKwh(sensor.sn, sl.s, sl.e, { maxGapMs }))\n    );\n  }\n\n  // Consumo Edificio = Totale - Frigo - Mensa - Auto (≥ 0 per slot)\n  series['Consumo Edificio'] = slots.map((sl, i) => {\n    const totale = round0(deltaKwh('TOTAL_POWER', sl.s, sl.e, { maxGapMs }));\n    const sottratti = PARTIAL_SERIES.reduce((sum, sensor) =>\n      sum + (series[sensor.label][i] || 0), 0\n    );\n    return Math.max(0, totale - sottratti);\n  });\n\n  return { labels, series };\n}\n\nfunction sumSeriesValues(series) {\n  return round0(series.reduce((sum, item) => sum + Number(item.value || 0), 0));\n}\n\nfunction sumSensorAcrossSlots(slots, sn, maxGapMs) {\n  return round0(\n    slots.reduce((sum, sl) => sum + deltaKwh(sn, sl.s, sl.e, { maxGapMs }), 0)\n  );\n}\n\n// max gap tollerato prima di considerare il bordo \"non coperto\"\nconst GAP_24H = 2 * 3600 * 1000;        // 2 ore, robusto contro letture ritardate\nconst GAP_7D  = 12 * 3600 * 1000;       // 12 ore\nconst GAP_30D = 4 * 24 * 3600 * 1000;  // 4 giorni: copre gap dati fino a ~80h\n\n// ---------------------------------------------------------\n// 6) JSON finali\n// ---------------------------------------------------------\nconst h24TotalSeries = buildTotalSeries(hours24, GAP_24H);\n\nconst d24 = {\n  updated_at: fmtUpdatedAt(now),\n  totale_vs_fv: {\n    consumo: sumSeriesValues(h24TotalSeries),\n    fotovoltaico: sumSensorAcrossSlots(hours24, 'FV_POWER', GAP_24H),\n  },\n  consumo_totale: h24TotalSeries,\n  consumo_parziale: buildPartialSeries(hours24, GAP_24H),\n};\n\nconst d7TotalSeries = buildTotalSeries(days7, GAP_7D);\n\nconst d7 = {\n  updated_at: fmtUpdatedAt(now),\n  totale_vs_fv: {\n    consumo: sumSeriesValues(d7TotalSeries),\n    fotovoltaico: sumSensorAcrossSlots(days7, 'FV_POWER', GAP_7D),\n  },\n  consumo_totale: d7TotalSeries,\n  consumo_parziale: buildPartialSeries(days7, GAP_7D),\n};\n\nconst d30TotalSeries = buildTotalSeries(weeks4, GAP_30D);\nconst d30PartialSeries = buildPartialSeries(weeks4, GAP_30D);\n\nconst d30 = {\n  updated_at: fmtUpdatedAt(now),\n  totale_vs_fv: {\n    consumo: sumSeriesValues(d30TotalSeries),\n    fotovoltaico: sumSensorAcrossSlots(weeks4, 'FV_POWER', GAP_30D),\n  },\n  consumo_totale: d30TotalSeries,\n  consumo_parziale: d30PartialSeries,\n};\n\n// ---------------------------------------------------------\n// 7) Base64 output per GitHub\n// ---------------------------------------------------------\nfunction b64(obj) {\n  return Buffer.from(JSON.stringify(obj, null, 2)).toString('base64');\n}\n\nreturn [\n  { json: { filename: 'data/24h.json', base64Content: b64(d24) } },\n  { json: { filename: 'data/7d.json',  base64Content: b64(d7) } },\n  { json: { filename: 'data/30d.json', base64Content: b64(d30) } },\n];"
+      },
+      "id": "73542a3f-63e6-4307-8088-bd292e57340e",
+      "name": "Build - Costruisci JSON Sensori",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48416,
+        -2256
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "triazdashboard",
+          "mode": "list",
+          "cachedResultName": "triazdashboard",
+          "cachedResultUrl": "https://github.com/triazdashboard"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "sensor-dashboard",
+          "mode": "list",
+          "cachedResultName": "sensor-dashboard",
+          "cachedResultUrl": "https://github.com/LucaQuer/sensor-dashboard"
+        },
+        "filePath": "={{ $json.filename }}",
+        "fileContent": "={{ $json.base64Content }}",
+        "commitMessage": "=Aggiorna {{$json.filename}}"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        48848,
+        -2256
+      ],
+      "id": "f82c62e7-bf46-456b-bf9d-8e600733c4b3",
+      "name": "Edit a file",
+      "webhookId": "97085107-76d7-4bd4-9ac5-24257d0a25ca",
+      "credentials": {
+        "githubApi": {
+          "id": "AC8g88y70abHCOXL",
+          "name": "GitHub account triazdashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').first().json.id }}",
+        "labelIds": [
+          "Label_2767721656313565881"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        50960,
+        -2256
+      ],
+      "id": "6548139f-fc1e-4c08-83b1-d69efad16a64",
+      "name": "Add label to message",
+      "webhookId": "53163e6e-9ab4-4833-967e-e3fa6747c63a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UpByhntwPbDrTCwO",
+          "name": "Gmail account triazdashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail Trigger').first().json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        51376,
+        -2256
+      ],
+      "id": "82438b72-921c-4aef-8cda-d4f77937a44d",
+      "name": "Mark a message as read",
+      "webhookId": "a7c96008-fe17-434a-b579-1fc9bd59ae41",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UpByhntwPbDrTCwO",
+          "name": "Gmail account triazdashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const binaryData = $('Gmail Trigger').first().binary;\nif (!binaryData) return [];\nconst key = Object.keys(binaryData).find(k =>\n  binaryData[k].fileName?.toLowerCase().includes(\"tutte_le_task\") ||\n  binaryData[k].fileName?.toLowerCase().includes(\"tutte le task\") ||\n  binaryData[k].fileName?.toLowerCase().includes(\"task_da_aggregare\")\n);\nif (!key) return [];\nreturn [{ json: {}, binary: { attachment: binaryData[key] } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        49264,
+        -2256
+      ],
+      "id": "3cc179b9-2834-472c-bb8f-183ff017f793",
+      "name": "TRADUCI: Task"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "attachment",
+        "options": {
+          "range": "A5:U2000"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        49680,
+        -2256
+      ],
+      "id": "7497912a-0e60-439e-95ce-8e890561465e",
+      "name": "Extract Task"
+    },
+    {
+      "parameters": {
+        "jsCode": "function pad2(v){return String(v).padStart(2,'0');}\nfunction fmt(d=new Date()){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}\n\nfunction parseDate(value){\n  if(!value) return null;\n  if(value instanceof Date) return isNaN(value.getTime())?null:value;\n  if(typeof value==='number'&&value>40000&&value<60000)\n    return new Date(Date.UTC(1899,11,30)+value*86400000);\n  const s=String(value).trim();\n  const m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n  if(m) return new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);\n  const it=s.match(/^(\\d{2})[-\\/](\\d{2})[-\\/](\\d{4})$/);\n  if(it) return new Date(`${it[3]}-${it[2]}-${it[1]}T00:00:00`);\n  return null;\n}\n\nconst PROG_LABEL = {\n  'Preventive Maintenance':                                  'Manutenzioni',\n  'Antincendio - Preventive':                                'Antincendio',\n  'Preventive Maintenance - Meter Reading - Multiple Task':  'Meter Reading',\n  'Elettrico - Preventive':                                  'Elettrico',\n  'Pulizie Preventive':                                      'Pulizie',\n  'Climatizzazione - Preventive':                            'Climatizzazione',\n  'Idraulico - Preventive':                                  'Idraulico',\n  'Edili - Preventive':                                      'Edili',\n};\n\nconst PADRE_SHORT = {\n  'Servizi Ufficio':            'Servizi Ufficio',\n  'Gestione Spedizioni':        'Gest. Spedizioni',\n  'Assistenza Tecnica Tririga': 'Ass. Tecn. Tririga',\n  'Catering/Vending':           'Catering/Vending',\n  'Segnalazione':               'Segnalazione',\n  'Manutenzioni Edili':         'Manut. Edili',\n  'Interventi Esterni':         'Int. Esterni',\n  'Assistenza Utente Tririga':  'Ass. Ut. Tririga',\n  'Elettrico/Dati':             'Elettrico/Dati',\n  'Pulizia':                    'Pulizia',\n  'Building Services':          'Building Services',\n};\n\nconst CLASSE_SHORT = {\n  'Richiesta ad uso esclusivo Service Desk IT':           'Service Desk IT',\n  'Allestimenti sale e workplace':                        'Allestimenti',\n  'Creazione/Sostituzione badge aziendali':               'Badge aziendali',\n  'Gestione Spedizione/Ricezione IT':                     'Sped./Ric. IT',\n  'Gestione Account':                                     'Gestione Account',\n  'Catering/Vending - Altro':                             'Catering/Vend.',\n  'Malfunzionamento Distributori automatici':             'Distr. Automatici',\n  'Opere murarie':                                        'Opere murarie',\n  'Spostamento mobili/Facchinaggio':                      'Facchinaggio',\n  'Richieste Periferiche/Accessori IT':                   'Periferiche IT',\n  'Malfunzionamento Stampanti':                           'Stampanti',\n  'Mouse e tastiera':                                     'Mouse/Tastiera',\n  'Richieste Fonia':                                      'Fonia',\n  'Servizi Ufficio - Altro':                              'Servizi Altro',\n  'Locker':                                               'Locker',\n  'Reservation':                                          'Reservation',\n  'Cleaning - Altro':                                     'Cleaning Altro',\n  'Disinfestazione/Derattizzazione':                      'Disinfestazione',\n  'Pulizia straordinaria':                                'Straordinaria',\n  'Servizi igienici':                                     'Serv. igienici',\n  'Uffici':                                               'Uffici',\n  'Altro - S':                                            'Altro - S',\n  'Ascensori - S':                                        'Ascensori - S',\n  'Problemi accesso locali/Serramenti - S':               'Serramenti - S',\n  'Troppo freddo/caldo - S':                              'Clima - S',\n  'Manutenzioni Edili - Altro':                           'Edili Altro',\n  'Manutenzione meccanica':                               'Manut. meccan.',\n  'Illuminazione':                                        'Illuminazione',\n  'Torrette e Prese elettriche/dati non funzionanti':     'Torrette/Prese',\n  'Altro':                                                'Altro',\n};\n\nconst MONTHS_IT=['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];\n\nfunction toSede(edif){\n  const e=String(edif||'').trim();\n  if(e==='EH Milano') return 'Milano';\n  if(e.startsWith('EH Roma')) return 'Roma';\n  return null;\n}\n\nconst rows = $input.all().map(i=>i.json).filter(r=>r['Task ID']&&r['Task ID']!=='Task ID');\n\n// ── KPI ───────────────────────────────────────────────────────────────────────\nlet total=0, completed=0, active=0, late=0, inTime=0, lateDone=0;\nfor(const r of rows){\n  total++;\n  const status=String(r['Status']||'').trim();\n  const sla=String(r['Stato Rispetto SLA']||'').trim();\n  if(status==='Completed') completed++;\n  if(status==='Active') active++;\n  if(sla==='Active - Late') late++;\n  if(sla==='Completed - In Time') inTime++;\n  if(sla==='Completed - Late') lateDone++;\n}\nconst slaDen=inTime+lateDone;\nconst slaPct=slaDen>0?Math.round(inTime/slaDen*1000)/10:100;\n\n// ── Sede ─────────────────────────────────────────────────────────────────────\nconst sedeMap={Roma:{completed:0,active:0,late:0},Milano:{completed:0,active:0,late:0}};\nfor(const r of rows){\n  const sede=toSede(r['Edificio']); if(!sede) continue;\n  const status=String(r['Status']||'').trim();\n  const sla=String(r['Stato Rispetto SLA']||'').trim();\n  if(status==='Completed') sedeMap[sede].completed++;\n  if(status==='Active'){\n    if(sla==='Active - Late') sedeMap[sede].late++;\n    else sedeMap[sede].active++;\n  }\n}\n\n// ── Trend: completions by Fine Effettiva ─────────────────────────────────────\nconst trendMap={};\nfor(const r of rows){\n  if(String(r['Status']||'').trim()!=='Completed') continue;\n  const d=parseDate(r['Fine Effettiva']); if(!d) continue;\n  const key=pad2(d.getMonth()+1)+'-'+pad2(d.getDate());\n  trendMap[key]=(trendMap[key]||0)+1;\n}\nconst trendSorted=Object.entries(trendMap).sort((a,b)=>a[0].localeCompare(b[0]));\n\n// ── Programmate ───────────────────────────────────────────────────────────────\nconst progMap={};\nfor(const r of rows){\n  if(String(r['Tipo Task']||'').trim()!=='Preventive') continue;\n  const cl=String(r['Classe richiesta']||'').trim();\n  const label=PROG_LABEL[cl]||cl;\n  progMap[label]=(progMap[label]||0)+1;\n}\nconst progItems=Object.entries(progMap).map(([label,value])=>({label,value})).sort((a,b)=>a.value-b.value);\n\n// ── Correttive ────────────────────────────────────────────────────────────────\nconst corrMap={};\nfor(const r of rows){\n  if(String(r['Tipo Task']||'').trim()==='Preventive') continue;\n  const padre=String(r['Padre Classe Richiesta']||'').trim();\n  const classe=String(r['Classe richiesta']||'').trim();\n  if(!padre) continue;\n  const pName=PADRE_SHORT[padre]||padre;\n  const cName=CLASSE_SHORT[classe]||classe;\n  if(!corrMap[pName]) corrMap[pName]={value:0,children:{}};\n  corrMap[pName].value++;\n  corrMap[pName].children[cName]=(corrMap[pName].children[cName]||0)+1;\n}\nconst corrItems=Object.entries(corrMap)\n  .map(([name,d])=>({name,value:d.value,\n    children:Object.entries(d.children).map(([n,v])=>({name:n,value:v})).sort((a,b)=>b.value-a.value)}))\n  .sort((a,b)=>b.value-a.value);\n\n// ── Period label from Baseline date range ─────────────────────────────────────\nconst allDates=rows.map(r=>parseDate(r['Baseline Inizio'])).filter(Boolean).sort((a,b)=>a-b);\nlet periodLabel='';\nif(allDates.length){\n  const m1=allDates[0].getMonth()+1, m2=allDates[allDates.length-1].getMonth()+1;\n  const yr=allDates[allDates.length-1].getFullYear();\n  periodLabel=m1===m2?MONTHS_IT[m1]+' '+yr:MONTHS_IT[m1]+' – '+MONTHS_IT[m2]+' '+yr;\n}\n\nconst result={\n  updated_at:fmt(),\n  period_label:periodLabel,\n  kpi:{total,completed,sla_on_time_pct:slaPct,active,late},\n  sede:[\n    {name:'Roma', completed:sedeMap.Roma.completed, active:sedeMap.Roma.active, late:sedeMap.Roma.late},\n    {name:'Milano', completed:sedeMap.Milano.completed, active:sedeMap.Milano.active, late:sedeMap.Milano.late}\n  ],\n  trend:{\n    dates:trendSorted.map(e=>e[0]),\n    values:trendSorted.map(e=>e[1])\n  },\n  programmate:progItems,\n  correttive:{\n    total:corrItems.reduce((s,i)=>s+i.value,0),\n    items:corrItems\n  }\n};\n\nreturn[{json:{filename:'data/data_tasks.json',\n  base64Content:Buffer.from(JSON.stringify(result,null,2)).toString('base64')}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        50096,
+        -2256
+      ],
+      "id": "6b4bfdda-e93b-45b7-ae04-f01c2f40b1b9",
+      "name": "Build JSON Task"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "triazdashboard",
+          "mode": "list",
+          "cachedResultName": "triazdashboard",
+          "cachedResultUrl": "https://github.com/triazdashboard"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "task-dashboard",
+          "mode": "list",
+          "cachedResultName": "task-dashboard",
+          "cachedResultUrl": "https://github.com/triazdashboard/task-dashboard"
+        },
+        "filePath": "={{ $json.filename }}",
+        "fileContent": "={{ $json.base64Content }}",
+        "commitMessage": "=Aggiorna {{$json.filename}}"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        50528,
+        -2256
+      ],
+      "id": "9a7691f4-81ea-4b83-b66d-0bea80d6afd9",
+      "name": "Edit file Task",
+      "webhookId": "c3d4e5f6-a7b8-9012-cdef-012345678901",
+      "credentials": {
+        "githubApi": {
+          "id": "AC8g88y70abHCOXL",
+          "name": "GitHub account triazdashboard"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "TRADUCI EXCEL",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TRADUCI: Annuale",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TRADUCI: Meeting 30gg",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TRADUCI: Meeting Settimana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRADUCI EXCEL": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Parse - Estrai Misure OCCUPANCY RATE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse - Estrai Misure OCCUPANCY RATE": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "Build - Costruisci JSON Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build - Costruisci JSON Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Merge WP + Annuale",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRADUCI: Annuale": {
+      "main": [
+        [
+          {
+            "node": "Extract Annuale",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Annuale": {
+      "main": [
+        [
+          {
+            "node": "Build Annuale",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Annuale": {
+      "main": [
+        [
+          {
+            "node": "Merge WP + Annuale",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "TRADUCI: Meeting 30gg": {
+      "main": [
+        [
+          {
+            "node": "Extract Meeting 30gg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Meeting 30gg": {
+      "main": [
+        [
+          {
+            "node": "Build Meeting 30gg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Meeting 30gg": {
+      "main": [
+        [
+          {
+            "node": "Merge Meeting 30gg + Settimana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRADUCI: Meeting Settimana": {
+      "main": [
+        [
+          {
+            "node": "Extract Meeting Settimana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Meeting Settimana": {
+      "main": [
+        [
+          {
+            "node": "Build Meeting Settimana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Meeting Settimana": {
+      "main": [
+        [
+          {
+            "node": "Merge Meeting 30gg + Settimana",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge WP + Annuale": {
+      "main": [
+        [
+          {
+            "node": "Merge Final 4 JSONs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Meeting 30gg + Settimana": {
+      "main": [
+        [
+          {
+            "node": "Merge Final 4 JSONs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Final 4 JSONs": {
+      "main": [
+        [
+          {
+            "node": "Loop Upload Occupancy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Upload Occupancy": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit a file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit a file1": {
+      "main": [
+        [
+          {
+            "node": "Loop Upload Occupancy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Extract from File Sensori",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File Sensori": {
+      "main": [
+        [
+          {
+            "node": "Parse - Estrai Misure Sensori",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse - Estrai Misure Sensori": {
+      "main": [
+        [
+          {
+            "node": "Build - Costruisci JSON Sensori",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build - Costruisci JSON Sensori": {
+      "main": [
+        [
+          {
+            "node": "Edit a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit a file": {
+      "main": [
+        [
+          {
+            "node": "TRADUCI: Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRADUCI: Task": {
+      "main": [
+        [
+          {
+            "node": "Extract Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Task": {
+      "main": [
+        [
+          {
+            "node": "Build JSON Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build JSON Task": {
+      "main": [
+        [
+          {
+            "node": "Edit file Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit file Task": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e4887a86-32b1-4f7c-b376-f47b3949aa01",
+  "meta": {
+    "instanceId": "36b279cdbf2cfc21619f131b4fe36fad1a386345f17bbd10ed15db9719da6dd4"
+  },
+  "id": "y1ySAknYieV1mDsG",
+  "tags": []
+}

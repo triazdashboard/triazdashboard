@@ -1,29 +1,21 @@
 /* ══════════════════════════════════════════════════════════════════
-   TRIAZ DASHBOARD — SHARED DESIGN THEME  v1.0
+   TRIAZ DASHBOARD — SHARED DESIGN THEME  v2.0
 
-   Questo file è condiviso tra tutte le dashboard. Modificalo qui
-   e copialo nella root di ciascuna repo:
+   Modifica questo file e copialo nella root di ogni repo:
      • occupancy-dashboard/dashboard-theme.css
      • sensor-dashboard/dashboard-theme.css
      • task-dashboard/dashboard-theme.css
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── Design Tokens ─────────────────────────────────────────────── */
+/* ── Design Tokens ── */
 :root {
-  /* Sfondo */
   --bg: #07111f;
-
-  /* Pannelli / Card */
   --panel:          rgba(11, 24, 43, 0.91);
   --panel-border:   rgba(130, 175, 255, 0.22);
   --panel-border-2: rgba(130, 175, 255, 0.09);
   --panel-inner:    rgba(255, 255, 255, 0.04);
-
-  /* Tipografia */
-  --text:  #f4f8ff;
-  --muted: #b2c3de;
-
-  /* Colori accentuazione */
+  --text:   #f4f8ff;
+  --muted:  #b2c3de;
   --cyan:   #45d4ff;
   --green:  #33d17a;
   --yellow: #f6c344;
@@ -32,27 +24,17 @@
   --purple: #a78bfa;
   --orange: #ff9f43;
   --violet: #9b6dff;
-
-  /* Griglia grafici ECharts */
   --grid-line: rgba(255, 255, 255, 0.12);
-
-  /* Elevazione & forma */
   --shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
   --radius: 16px;
 }
 
-/* ── Reset ──────────────────────────────────────────────────────── */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── Base ───────────────────────────────────────────────────────── */
+/* ── Base ── */
 html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+  width: 100%; height: 100%; overflow: hidden;
   font-family: Inter, "Segoe UI", Arial, sans-serif;
   color: var(--text);
   background:
@@ -62,26 +44,158 @@ html, body {
     linear-gradient(180deg, #081120 0%, var(--bg) 100%);
 }
 
-/* ── Card — stili visivi condivisi ──────────────────────────────── */
-/* Il layout (display, flex/grid, min-height) è definito in ogni dashboard */
-.card {
-  position: relative;
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* ── Body grid layout (header | main | footer) ── */
+body {
+  display: grid;
+  grid-template-rows: 52px 1fr 40px;
+  height: 100vh;
+  padding: 10px;
+  gap: 8px;
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 22%),
-    radial-gradient(circle at top right, rgba(76, 125, 255, 0.15), transparent 30%);
+/* ── Header ── */
+.t-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  position: relative; overflow: hidden;
+}
+.t-header::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(69,212,255,.05) 0%, transparent 55%);
   pointer-events: none;
-  z-index: 0;
+}
+.t-brand {
+  display: flex; align-items: center; gap: 12px;
+  flex: 1; min-width: 0; position: relative; z-index: 1;
+}
+.t-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+  animation: t-pulse 2.4s ease-in-out infinite;
+}
+@keyframes t-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--cyan); }
+  50%       { opacity: .4; box-shadow: 0 0 20px var(--cyan); }
+}
+.t-titles { min-width: 0; }
+.t-title {
+  font-size: clamp(14px, 1.5vw, 20px); font-weight: 800;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.t-sub { font-size: 10px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+
+.t-status {
+  text-align: right; color: var(--muted); font-size: 11px; font-weight: 500;
+  flex-shrink: 0; margin-left: 20px; position: relative; z-index: 1;
+}
+.t-clock {
+  text-align: right; flex-shrink: 0; margin-left: 20px; position: relative; z-index: 1;
+}
+.t-clock-time {
+  font-size: clamp(22px, 2.4vw, 32px); font-weight: 800;
+  color: var(--cyan); letter-spacing: .04em; line-height: 1;
+}
+.t-clock-date { font-size: 10px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+
+/* ── Card ── */
+.card {
+  position: relative;
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.card::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 22%),
+    radial-gradient(circle at top right, rgba(76,125,255,0.15), transparent 30%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── Card head ── */
+.card-head {
+  height: 36px; padding: 0 14px; flex-shrink: 0;
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.card-title {
+  font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.card-title::before {
+  content: ''; display: inline-block; width: 5px; height: 5px;
+  border-radius: 50%; flex-shrink: 0;
+  background: var(--cyan); box-shadow: 0 0 5px var(--cyan);
+}
+.card-meta { display: flex; gap: 5px; overflow: hidden; }
+.badge {
+  padding: 2px 8px; border-radius: 5px;
+  background: var(--panel-inner); border: 1px solid var(--panel-border-2);
+  font-size: 10px; font-weight: 500; color: var(--muted); white-space: nowrap;
+}
+.badge strong { color: var(--text); font-weight: 700; }
+
+/* ── Card body ── */
+.card-body { flex: 1; position: relative; z-index: 1; overflow: hidden; min-height: 0; }
+.chart { width: 100%; height: 100%; }
+
+/* ── Legend ── */
+.legend {
+  display: flex; gap: 14px; justify-content: center; align-items: center;
+  padding: 4px 14px 6px; flex-shrink: 0; position: relative; z-index: 1;
+  border-top: 1px solid rgba(255,255,255,.05);
+}
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600; color: var(--muted); white-space: nowrap;
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Footer ── */
+.t-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 18px;
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  position: relative; overflow: hidden;
+}
+.t-footer::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 45%, rgba(69,212,255,.04) 100%);
+  pointer-events: none;
+}
+.t-update {
+  font-size: 9px; color: var(--muted); opacity: .65;
+  white-space: nowrap; position: relative; z-index: 1;
+}
+.t-kpis { display: flex; gap: 6px; position: relative; z-index: 1; }
+.kpi {
+  padding: 2px 12px; border-radius: 7px;
+  background: var(--panel-inner); border: 1px solid var(--panel-border-2);
+  text-align: center; min-width: 70px;
+}
+.kpi-value { display: block; font-size: 15px; font-weight: 800; line-height: 1.2; }
+.kpi-label {
+  display: block; font-size: 8px; font-weight: 600;
+  color: var(--muted); letter-spacing: .07em; text-transform: uppercase;
+}
+
+/* ── Color utilities ── */
+.t-cyan   { color: var(--cyan); }
+.t-green  { color: var(--green); }
+.t-yellow { color: var(--yellow); }
+.t-red    { color: var(--red); }
+.t-blue   { color: var(--blue); }
+.t-purple { color: var(--purple); }
+
+/* ── Loading ── */
+.t-loading {
+  display: grid; place-items: center; height: 100%;
+  color: var(--muted); font-size: 18px; text-align: center;
 }
