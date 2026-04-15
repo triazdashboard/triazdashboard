@@ -218,7 +218,7 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
     const COLORS = {
       total: '#4c7dff',
       fv: '#33d17a',
-      frigo: '#4c7dff',
+      frigo: '#ff9f43',
       mensa: '#33d17a',
       charger: '#f6c344',
       edificio: '#a78bfa',
@@ -355,7 +355,7 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
           name: 'Consumo Totale', type: 'line', smooth: true,
           symbol: 'circle', symbolSize: 6, data: values,
           lineStyle: { width: 3, color: COLORS.total },
-          itemStyle: { color: COLORS.cyan, borderColor: COLORS.total, borderWidth: 2 },
+          itemStyle: { color: COLORS.total },
           areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: 'rgba(76,125,255,0.45)' },
             { offset: 1, color: 'rgba(76,125,255,0.02)' }
