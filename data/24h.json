@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-04-15 09:21",
+  "updated_at": "2026-04-15 19:19",
   "totale_vs_fv": {
     "consumo": 1689,
     "fotovoltaico": 352
@@ -103,30 +103,102 @@
     }
   ],
   "fotovoltaico_totale": [
-    { "label": "00", "value": 0 },
-    { "label": "01", "value": 0 },
-    { "label": "02", "value": 0 },
-    { "label": "03", "value": 0 },
-    { "label": "04", "value": 0 },
-    { "label": "05", "value": 0 },
-    { "label": "06", "value": 0 },
-    { "label": "07", "value": 3 },
-    { "label": "08", "value": 10 },
-    { "label": "09", "value": 32 },
-    { "label": "10", "value": 48 },
-    { "label": "11", "value": 58 },
-    { "label": "12", "value": 62 },
-    { "label": "13", "value": 52 },
-    { "label": "14", "value": 42 },
-    { "label": "15", "value": 30 },
-    { "label": "16", "value": 16 },
-    { "label": "17", "value": 7 },
-    { "label": "18", "value": 2 },
-    { "label": "19", "value": 0 },
-    { "label": "20", "value": 0 },
-    { "label": "21", "value": 0 },
-    { "label": "22", "value": 0 },
-    { "label": "23", "value": 0 }
+    {
+      "label": "00",
+      "value": 0
+    },
+    {
+      "label": "01",
+      "value": 0
+    },
+    {
+      "label": "02",
+      "value": 0
+    },
+    {
+      "label": "03",
+      "value": 0
+    },
+    {
+      "label": "04",
+      "value": 0
+    },
+    {
+      "label": "05",
+      "value": 0
+    },
+    {
+      "label": "06",
+      "value": 0
+    },
+    {
+      "label": "07",
+      "value": 2
+    },
+    {
+      "label": "08",
+      "value": 17
+    },
+    {
+      "label": "09",
+      "value": 21
+    },
+    {
+      "label": "10",
+      "value": 27
+    },
+    {
+      "label": "11",
+      "value": 48
+    },
+    {
+      "label": "12",
+      "value": 40
+    },
+    {
+      "label": "13",
+      "value": 19
+    },
+    {
+      "label": "14",
+      "value": 38
+    },
+    {
+      "label": "15",
+      "value": 64
+    },
+    {
+      "label": "16",
+      "value": 35
+    },
+    {
+      "label": "17",
+      "value": 26
+    },
+    {
+      "label": "18",
+      "value": 14
+    },
+    {
+      "label": "19",
+      "value": 1
+    },
+    {
+      "label": "20",
+      "value": 0
+    },
+    {
+      "label": "21",
+      "value": 0
+    },
+    {
+      "label": "22",
+      "value": 0
+    },
+    {
+      "label": "23",
+      "value": 0
+    }
   ],
   "consumo_parziale": {
     "labels": [
