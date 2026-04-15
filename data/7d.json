@@ -34,6 +34,15 @@
       "value": 1689
     }
   ],
+  "fotovoltaico_totale": [
+    { "label": "Mer", "value": 420 },
+    { "label": "Gio", "value": 380 },
+    { "label": "Ven", "value": 510 },
+    { "label": "Sab", "value": 490 },
+    { "label": "Dom", "value": 520 },
+    { "label": "Lun", "value": 450 },
+    { "label": "Mar", "value": 446 }
+  ],
   "consumo_parziale": {
     "labels": [
       "Mer",

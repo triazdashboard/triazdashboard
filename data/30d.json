@@ -22,6 +22,12 @@
       "value": 9318
     }
   ],
+  "fotovoltaico_totale": [
+    { "label": "W1", "value": 0 },
+    { "label": "W2", "value": 4200 },
+    { "label": "W3", "value": 4350 },
+    { "label": "W4", "value": 3828 }
+  ],
   "consumo_parziale": {
     "labels": [
       "W1",

@@ -170,11 +170,52 @@
       const chart = echarts.init(document.getElementById(el));
       const labels = (data?.consumo_totale || []).map(x => x.label);
       const values = (data?.consumo_totale || []).map(x => Number(x.value || 0));
+      const fvValues = (data?.fotovoltaico_totale || []).map(x => Number(x.value || 0));
+      const hasFv = fvValues.length > 0;
+
+      const series = [
+        {
+          name: 'Consumo Totale', type: 'line', smooth: true,
+          symbol: 'circle', symbolSize: 6, data: values,
+          lineStyle: { width: 3, color: COLORS.total },
+          itemStyle: { color: COLORS.cyan, borderColor: COLORS.total, borderWidth: 2 },
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(76,125,255,0.45)' },
+            { offset: 1, color: 'rgba(76,125,255,0.02)' }
+          ])},
+          markLine: { silent: true, symbol: 'none', lineStyle: { color: 'rgba(255,255,255,0.10)', type: 'dashed' }, label: { show: false }, data: [{ type: 'average' }] }
+        }
+      ];
+
+      if (hasFv) {
+        series.push({
+          name: 'Fotovoltaico', type: 'line', smooth: true,
+          symbol: 'circle', symbolSize: 6, data: fvValues,
+          lineStyle: { width: 3, color: COLORS.fv },
+          itemStyle: { color: COLORS.fv, borderColor: '#1a5e3a', borderWidth: 2 },
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(51,209,122,0.35)' },
+            { offset: 1, color: 'rgba(51,209,122,0.02)' }
+          ])}
+        });
+      }
+
       chart.setOption({
         backgroundColor: 'transparent',
         animationDuration: 900,
-        tooltip: { trigger: 'axis', backgroundColor: 'rgba(7,17,31,0.96)', borderWidth: 0, textStyle: { color: '#fff' } },
-        grid: { left: 55, right: 18, top: 20, bottom: 38 },
+        legend: hasFv ? {
+          top: 4, right: 12,
+          itemGap: 14, itemWidth: 10, itemHeight: 10,
+          textStyle: { color: COLORS.muted, fontSize: 11 }
+        } : { show: false },
+        tooltip: {
+          trigger: 'axis', backgroundColor: 'rgba(7,17,31,0.96)', borderWidth: 0,
+          textStyle: { color: '#fff' },
+          formatter: params => params.map(p =>
+            `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${p.seriesName}: <b>${p.value}</b> kWh`
+          ).join('<br/>')
+        },
+        grid: { left: 55, right: 18, top: hasFv ? 32 : 20, bottom: 38 },
         xAxis: {
           type: 'category', data: labels, boundaryGap: false,
           axisLabel: { color: COLORS.muted, fontSize: 13, hideOverlap: true },
@@ -186,17 +227,7 @@
           axisLabel: { color: COLORS.muted, fontSize: 13, hideOverlap: true },
           splitLine: { lineStyle: { color: COLORS.grid } }
         },
-        series: [{
-          name: title, type: 'line', smooth: true,
-          symbol: 'circle', symbolSize: 7, data: values,
-          lineStyle: { width: 4, color: COLORS.total },
-          itemStyle: { color: COLORS.cyan, borderColor: COLORS.total, borderWidth: 2 },
-          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(76,125,255,0.55)' },
-            { offset: 1, color: 'rgba(76,125,255,0.02)' }
-          ])},
-          markLine: { silent: true, symbol: 'none', lineStyle: { color: 'rgba(255,255,255,0.12)', type: 'dashed' }, label: { show: false }, data: [{ type: 'average', name: 'Media' }] }
-        }]
+        series
       });
       return chart;
     }
