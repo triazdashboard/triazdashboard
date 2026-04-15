@@ -47,7 +47,7 @@ html, body {
 /* ── Body grid layout (header | main | footer) ── */
 body {
   display: grid;
-  grid-template-rows: 52px 1fr 40px;
+  grid-template-rows: 68px 1fr 46px;
   height: 100vh;
   padding: 10px;
   gap: 8px;
@@ -72,8 +72,8 @@ body {
   flex: 1; min-width: 0; position: relative; z-index: 1;
 }
 .t-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  background: var(--cyan); box-shadow: 0 0 10px var(--cyan);
   animation: t-pulse 2.4s ease-in-out infinite;
 }
 @keyframes t-pulse {
@@ -82,23 +82,24 @@ body {
 }
 .t-titles { min-width: 0; }
 .t-title {
-  font-size: clamp(14px, 1.5vw, 20px); font-weight: 800;
+  font-size: clamp(18px, 1.8vw, 26px); font-weight: 500;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 }
-.t-sub { font-size: 10px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+.t-sub { font-size: clamp(12px, 1.1vw, 15px); color: var(--muted); margin-top: 4px; white-space: nowrap; font-weight: 400; }
 
 .t-status {
-  text-align: right; color: var(--muted); font-size: 11px; font-weight: 500;
+  text-align: right; color: var(--muted); font-size: 13px; font-weight: 400;
   flex-shrink: 0; margin-left: 20px; position: relative; z-index: 1;
 }
 .t-clock {
   text-align: right; flex-shrink: 0; margin-left: 20px; position: relative; z-index: 1;
 }
 .t-clock-time {
-  font-size: clamp(22px, 2.4vw, 32px); font-weight: 800;
+  font-size: clamp(24px, 2.4vw, 34px); font-weight: 600;
   color: var(--cyan); letter-spacing: .04em; line-height: 1;
 }
-.t-clock-date { font-size: 10px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+.t-clock-date { font-size: clamp(11px, 1vw, 13px); color: var(--muted); margin-top: 3px; white-space: nowrap; font-weight: 400; }
 
 /* ── Card ── */
 .card {
@@ -171,19 +172,19 @@ body {
   pointer-events: none;
 }
 .t-update {
-  font-size: 9px; color: var(--muted); opacity: .65;
+  font-size: 12px; color: var(--muted); opacity: .75;
   white-space: nowrap; position: relative; z-index: 1;
 }
-.t-kpis { display: flex; gap: 6px; position: relative; z-index: 1; }
+.t-kpis { display: flex; gap: 8px; position: relative; z-index: 1; }
 .kpi {
-  padding: 2px 12px; border-radius: 7px;
+  padding: 3px 14px; border-radius: 7px;
   background: var(--panel-inner); border: 1px solid var(--panel-border-2);
-  text-align: center; min-width: 70px;
+  text-align: center; min-width: 80px;
 }
-.kpi-value { display: block; font-size: 15px; font-weight: 800; line-height: 1.2; }
+.kpi-value { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; }
 .kpi-label {
-  display: block; font-size: 8px; font-weight: 600;
-  color: var(--muted); letter-spacing: .07em; text-transform: uppercase;
+  display: block; font-size: 10px; font-weight: 500;
+  color: var(--muted); letter-spacing: .06em; text-transform: uppercase;
 }
 
 /* ── Color utilities ── */
