@@ -61,22 +61,22 @@
 
     /* ── KPI panel (bottom of left column) ── */
     .ratio-kpis {
-      flex: 0 0 auto;
+      flex: 0 0 42%;
       display: flex; flex-direction: column;
       align-items: flex-start; justify-content: center;
-      gap: 14px; padding: 10px 14px;
+      gap: 18px; padding: 14px 18px;
       border-top: 1px solid rgba(255,255,255,0.07);
     }
-    .ratio-kpi { display: flex; align-items: center; gap: 11px; width: 100%; }
+    .ratio-kpi { display: flex; align-items: center; gap: 14px; width: 100%; }
     .ratio-kpi-icon {
-      flex-shrink: 0; width: 32px; height: 32px;
+      flex-shrink: 0; width: 44px; height: 44px;
       fill: rgba(255,255,255,0.82);
       filter: drop-shadow(0 0 4px rgba(255,255,255,0.18));
     }
     .ratio-kpi-icon.cyan { fill: #45d4ff; filter: drop-shadow(0 0 5px rgba(69,212,255,0.5)); }
-    .ratio-kpi-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .ratio-kpi-value { font-size: 18px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
-    .ratio-kpi-label { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+    .ratio-kpi-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .ratio-kpi-value { font-size: 22px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+    .ratio-kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
   </style>
 </head>
 <body>
@@ -350,19 +350,19 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       chartEl.style.position = 'relative';
       var iconOv = document.createElement('div');
       iconOv.style.cssText = 'position:absolute;top:8px;left:8px;z-index:1;pointer-events:none;line-height:0;';
-      iconOv.innerHTML = '<svg style="width:34px;height:34px;fill:#f6c344;filter:drop-shadow(0 0 6px rgba(246,195,68,0.6))" viewBox="0 0 260 244"><use href="#icon-solar"/></svg>';
+      iconOv.innerHTML = '<svg style="width:46px;height:46px;fill:#f6c344;filter:drop-shadow(0 0 6px rgba(246,195,68,0.6))" viewBox="0 0 260 244"><use href="#icon-solar"/></svg>';
       chartEl.appendChild(iconOv);
       var consumoOv = document.createElement('div');
       consumoOv.style.cssText = 'position:absolute;bottom:8px;left:10px;z-index:1;pointer-events:none;line-height:1.2;';
       consumoOv.innerHTML =
-        '<div style="font-size:9px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Consumo Totale</div>' +
-        '<div style="font-size:13px;font-weight:700;color:#4c7dff;letter-spacing:0.02em;">' + fmtEnergy(consumo) + '</div>';
+        '<div style="font-size:10px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:3px;">Consumo Totale</div>' +
+        '<div style="font-size:16px;font-weight:700;color:#4c7dff;letter-spacing:0.02em;">' + fmtEnergy(consumo) + '</div>';
       chartEl.appendChild(consumoOv);
       var fvOv = document.createElement('div');
       fvOv.style.cssText = 'position:absolute;bottom:8px;right:10px;z-index:1;pointer-events:none;line-height:1.2;text-align:right;';
       fvOv.innerHTML =
-        '<div style="font-size:9px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Produzione FV</div>' +
-        '<div style="font-size:13px;font-weight:700;color:#f6c344;letter-spacing:0.02em;">' + fmtEnergy(fv) + '</div>';
+        '<div style="font-size:10px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:3px;">Produzione FV</div>' +
+        '<div style="font-size:16px;font-weight:700;color:#f6c344;letter-spacing:0.02em;">' + fmtEnergy(fv) + '</div>';
       chartEl.appendChild(fvOv);
 
       return chart;
