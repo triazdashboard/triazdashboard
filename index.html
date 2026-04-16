@@ -38,9 +38,7 @@
       border-right: 1px solid rgba(255,255,255,0.07);
       min-height: 0; min-width: 0; overflow: hidden;
     }
-    .mega-gauge {
-      flex: 1; position: relative; min-height: 0; overflow: hidden;
-    }
+    .mega-gauge { display: none; }
     .mega-right {
       flex: 1; display: flex; flex-direction: column;
       min-height: 0; min-width: 0; overflow: hidden;
@@ -61,20 +59,23 @@
 
     /* ── KPI panel (bottom of left column) ── */
     .ratio-kpis {
-      flex: 0 0 42%;
+      flex: 1;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 18px; padding: 14px 18px;
+      align-items: center; justify-content: space-evenly;
+      padding: 16px 20px;
     }
-    .ratio-kpi { display: flex; align-items: center; gap: 14px; }
+    .ratio-kpi { display: flex; align-items: center; gap: 16px; }
     .ratio-kpi-icon {
-      flex-shrink: 0; width: 44px; height: 44px;
+      flex-shrink: 0; width: 46px; height: 46px;
       fill: rgba(255,255,255,0.82);
       filter: drop-shadow(0 0 4px rgba(255,255,255,0.18));
     }
+    .ratio-kpi-icon.blue { fill: #4c7dff; filter: drop-shadow(0 0 5px rgba(76,125,255,0.5)); }
+    .ratio-kpi-icon.yellow { fill: #f6c344; filter: drop-shadow(0 0 5px rgba(246,195,68,0.5)); }
     .ratio-kpi-icon.cyan { fill: #45d4ff; filter: drop-shadow(0 0 5px rgba(69,212,255,0.5)); }
+    .ratio-kpi-icon.green { fill: #33d17a; filter: drop-shadow(0 0 5px rgba(51,209,122,0.5)); }
     .ratio-kpi-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .ratio-kpi-value { font-size: 22px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+    .ratio-kpi-value { font-size: 24px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
     .ratio-kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
   </style>
 </head>
@@ -124,6 +125,12 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       <path d="M29,26H23V22a2.002,2.002,0,0,1,2-2h2V18H23V16h4a2.0023,2.0023,0,0,1,2,2v2a2.0023,2.0023,0,0,1-2,2H25v2h4Z"/>
       <path d="M19,22H15a2.0023,2.0023,0,0,1-2-2V10a2.002,2.002,0,0,1,2-2h4a2.002,2.002,0,0,1,2,2V20A2.0023,2.0023,0,0,1,19,22ZM15,10V20h4V10Z"/>
       <path d="M11,22H5a2.0023,2.0023,0,0,1-2-2V10A2.002,2.002,0,0,1,5,8h6v2H5V20h6Z"/>
+    </symbol>
+    <symbol id="icon-electricity" viewBox="0 0 48 48">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M18.4164 31H29.5837C30.0096 30.0175 30.5783 29.0337 31.1077 28.1972C31.9501 26.8663 32.8498 25.6684 33.3793 25.0221C34.7882 23.2987 35.668 21.225 35.9229 19.0407C36.1778 16.8563 35.798 14.6443 34.8245 12.6584C33.8509 10.6721 32.3213 8.98968 30.4066 7.80939C28.4915 6.62888 26.2713 6.00036 24.0019 6C21.7326 5.99964 19.5121 6.62747 17.5967 7.80738C15.6816 8.98707 14.1514 10.6691 13.1771 12.6551C12.203 14.6407 11.8225 16.8525 12.0767 19.037C12.3308 21.2216 13.2102 23.2957 14.6187 25.0197C15.1472 25.6656 16.0473 26.8635 16.8906 28.1951C17.4206 29.032 17.9901 30.0165 18.4164 31ZM34.9273 26.2885C36.5762 24.2717 37.6099 21.8396 37.9094 19.2725C38.209 16.7053 37.7621 14.1074 36.6204 11.7782C35.4787 9.44891 33.6885 7.48298 31.4561 6.10687C29.2237 4.73075 26.6398 4.00041 24.0022 4C21.3646 3.99959 18.7806 4.72911 16.5477 6.10453C14.3149 7.47995 12.524 9.44531 11.3816 11.7742C10.2391 14.1031 9.79137 16.7008 10.0901 19.2681C10.3888 21.8354 11.4217 24.2678 13.0699 26.2851C14.0324 27.4611 16.4803 30.8176 17 33H31C31.5197 30.8193 33.9648 27.4628 34.9273 26.2885Z"/>
+      <path d="M19 21L25 12V18H29L23 27L23 21H19Z"/>
+      <path d="M17 35H31V37H17V35Z"/>
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M29 41H19L19 42H29V41ZM17 39V42C17 43.1046 17.8954 44 19 44H29C30.1046 44 31 43.1046 31 42V39H17Z"/>
     </symbol>
     <symbol id="icon-cal-1" viewBox="0 0 48 48">
       <line x1="21.25" y1="20.925" x2="24.75" y2="19"/>
@@ -295,6 +302,20 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       if (kpisDiv) {
         kpisDiv.innerHTML =
           '<div class="ratio-kpi">' +
+            '<svg class="ratio-kpi-icon blue" viewBox="0 0 48 48"><use href="#icon-electricity"/></svg>' +
+            '<div class="ratio-kpi-info">' +
+              '<span class="ratio-kpi-value" style="color:#4c7dff">' + fmtEnergy(consumo) + '</span>' +
+              '<span class="ratio-kpi-label">Consumo Totale</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="ratio-kpi">' +
+            '<svg class="ratio-kpi-icon yellow" viewBox="0 0 260 244"><use href="#icon-solar"/></svg>' +
+            '<div class="ratio-kpi-info">' +
+              '<span class="ratio-kpi-value" style="color:#f6c344">' + fmtEnergy(fv) + '</span>' +
+              '<span class="ratio-kpi-label">Produzione FV</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="ratio-kpi">' +
             '<svg class="ratio-kpi-icon cyan" viewBox="0 0 496 496"><use href="#icon-ev"/></svg>' +
             '<div class="ratio-kpi-info">' +
               '<span class="ratio-kpi-value" style="color:#45d4ff">' + fmtEnergy(ev) + '</span>' +
@@ -302,67 +323,16 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
             '</div>' +
           '</div>' +
           '<div class="ratio-kpi">' +
-            '<svg class="ratio-kpi-icon" style="fill:#33d17a" viewBox="0 0 32 32"><use href="#icon-co2"/></svg>' +
+            '<svg class="ratio-kpi-icon green" viewBox="0 0 32 32"><use href="#icon-co2"/></svg>' +
             '<div class="ratio-kpi-info">' +
               '<span class="ratio-kpi-value" style="color:#33d17a">' + fmtCo2(co2) + '</span>' +
               '<span class="ratio-kpi-label">CO\u2082 Evitata</span>' +
             '</div>' +
           '</div>';
       }
-      chart.setOption({
-        backgroundColor: 'transparent',
-        animationDuration: 1200,
-        title: {
-          text: `${balance.toFixed(0)}%`,
-          left: 'center', top: '46%',
-          textStyle: { color: COLORS.text, fontSize: 28, fontWeight: 500 }
-        },
-        tooltip: { trigger: 'item', backgroundColor: 'rgba(7,17,31,0.96)', borderWidth: 0, textStyle: { color: '#fff' } },
-        series: [
-          {
-            name: 'Consumo Totale', type: 'gauge',
-            center: ['50%', '50%'], radius: '78%',
-            startAngle: 220, endAngle: -40, min: 0, max: Math.max(consumo, 1),
-            progress: { show: true, width: 18, itemStyle: { color: COLORS.total, shadowBlur: 20, shadowColor: 'rgba(76,125,255,0.45)' } },
-            pointer: { show: false },
-            axisLine: { lineStyle: { width: 18, color: [[1, 'rgba(255,255,255,0.06)']] } },
-            axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
-            detail: { show: false }, anchor: { show: false },
-            data: [{ value: consumo }]
-          },
-          {
-            name: 'Fotovoltaico', type: 'gauge',
-            center: ['50%', '50%'], radius: '56%',
-            startAngle: 220, endAngle: -40, min: 0, max: Math.max(consumo, 1),
-            progress: { show: true, width: 16, itemStyle: { color: '#f6c344', shadowBlur: 20, shadowColor: 'rgba(246,195,68,0.45)' } },
-            pointer: { show: false },
-            axisLine: { lineStyle: { width: 16, color: [[1, 'rgba(255,255,255,0.05)']] } },
-            axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
-            detail: { show: false }, anchor: { show: false },
-            data: [{ value: fv }]
-          }
-        ]
-      });
 
-      // Overlay: solar icon top-left, consumo+FV stacked bottom-center
-      var chartEl = document.getElementById(el);
-      chartEl.style.position = 'relative';
-      var iconOv = document.createElement('div');
-      iconOv.style.cssText = 'position:absolute;top:18px;left:50%;transform:translateX(-50%);z-index:1;pointer-events:none;line-height:0;';
-      iconOv.innerHTML = '<svg style="width:46px;height:46px;fill:#f6c344;filter:drop-shadow(0 0 6px rgba(246,195,68,0.6))" viewBox="0 0 260 244"><use href="#icon-solar"/></svg>';
-      chartEl.appendChild(iconOv);
-      var valOv = document.createElement('div');
-      valOv.style.cssText = 'position:absolute;bottom:6px;left:0;right:0;z-index:1;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:6px;';
-      valOv.innerHTML =
-        '<div style="line-height:1.2;text-align:center;">' +
-          '<div style="font-size:11px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Consumo Totale</div>' +
-          '<div style="font-size:19px;font-weight:700;color:#4c7dff;">' + fmtEnergy(consumo) + '</div>' +
-        '</div>' +
-        '<div style="line-height:1.2;text-align:center;">' +
-          '<div style="font-size:11px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Produzione FV</div>' +
-          '<div style="font-size:19px;font-weight:700;color:#f6c344;">' + fmtEnergy(fv) + '</div>' +
-        '</div>';
-      chartEl.appendChild(valOv);
+      // Gauge nascosta — serve solo per registerChart
+      chart.setOption({ backgroundColor: 'transparent', series: [] });
 
       return chart;
     }
