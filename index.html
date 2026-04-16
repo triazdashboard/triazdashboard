@@ -63,7 +63,7 @@
     .ratio-kpis {
       flex: 0 0 42%;
       display: flex; flex-direction: column;
-      align-items: flex-start; justify-content: center;
+      align-items: center; justify-content: center;
       gap: 18px; padding: 14px 18px;
       border-top: 1px solid rgba(255,255,255,0.07);
     }
@@ -345,25 +345,25 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
         ]
       });
 
-      // Overlay: solar icon top-left, consumo bottom-left, FV bottom-right
+      // Overlay: solar icon top-left, consumo+FV stacked bottom-center
       var chartEl = document.getElementById(el);
       chartEl.style.position = 'relative';
       var iconOv = document.createElement('div');
       iconOv.style.cssText = 'position:absolute;top:8px;left:8px;z-index:1;pointer-events:none;line-height:0;';
       iconOv.innerHTML = '<svg style="width:46px;height:46px;fill:#f6c344;filter:drop-shadow(0 0 6px rgba(246,195,68,0.6))" viewBox="0 0 260 244"><use href="#icon-solar"/></svg>';
       chartEl.appendChild(iconOv);
-      var consumoOv = document.createElement('div');
-      consumoOv.style.cssText = 'position:absolute;bottom:8px;left:10px;z-index:1;pointer-events:none;line-height:1.2;';
-      consumoOv.innerHTML =
-        '<div style="font-size:10px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:3px;">Consumo Totale</div>' +
-        '<div style="font-size:16px;font-weight:700;color:#4c7dff;letter-spacing:0.02em;">' + fmtEnergy(consumo) + '</div>';
-      chartEl.appendChild(consumoOv);
-      var fvOv = document.createElement('div');
-      fvOv.style.cssText = 'position:absolute;bottom:8px;right:10px;z-index:1;pointer-events:none;line-height:1.2;text-align:right;';
-      fvOv.innerHTML =
-        '<div style="font-size:10px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:3px;">Produzione FV</div>' +
-        '<div style="font-size:16px;font-weight:700;color:#f6c344;letter-spacing:0.02em;">' + fmtEnergy(fv) + '</div>';
-      chartEl.appendChild(fvOv);
+      var valOv = document.createElement('div');
+      valOv.style.cssText = 'position:absolute;bottom:10px;left:0;right:0;z-index:1;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:6px;';
+      valOv.innerHTML =
+        '<div style="line-height:1.2;text-align:center;">' +
+          '<div style="font-size:11px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Consumo Totale</div>' +
+          '<div style="font-size:19px;font-weight:700;color:#4c7dff;">' + fmtEnergy(consumo) + '</div>' +
+        '</div>' +
+        '<div style="line-height:1.2;text-align:center;">' +
+          '<div style="font-size:11px;font-weight:600;color:#b2c3de;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;">Produzione FV</div>' +
+          '<div style="font-size:19px;font-weight:700;color:#f6c344;">' + fmtEnergy(fv) + '</div>' +
+        '</div>';
+      chartEl.appendChild(valOv);
 
       return chart;
     }
