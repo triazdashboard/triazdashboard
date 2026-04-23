@@ -100,6 +100,10 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       <div class="t-sub">Consumi elettrici e produzione fotovoltaica · ultima settimana</div>
     </div>
   </div>
+  <div class="t-clock">
+    <div class="t-clock-time" id="tTime">--:--</div>
+    <div class="t-clock-date" id="tDate">--</div>
+  </div>
 </header>
 
 <div class="t-main">
@@ -128,6 +132,14 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
 </footer>
 
 <script>
+  /* ── Clock ── */
+  (function tick(){
+    const n=new Date();
+    document.getElementById('tTime').textContent=n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('tDate').textContent=n.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    setTimeout(tick,1000);
+  })();
+
   (function() {
     function applyViewport() {
       document.body.style.width  = window.innerWidth  + 'px';
