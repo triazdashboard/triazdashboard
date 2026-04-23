@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-04-23 18:30",
+  "updated_at": "2026-04-23 18:41",
   "totale_vs_fv": {
     "consumo": 44841,
     "fotovoltaico": 13323
@@ -20,6 +20,24 @@
     {
       "label": "W4",
       "value": 8694
+    }
+  ],
+  "fotovoltaico_totale": [
+    {
+      "label": "W1",
+      "value": 4091
+    },
+    {
+      "label": "W2",
+      "value": 3073
+    },
+    {
+      "label": "W3",
+      "value": 2971
+    },
+    {
+      "label": "W4",
+      "value": 3188
     }
   ],
   "consumo_parziale": {
