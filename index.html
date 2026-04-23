@@ -248,6 +248,16 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
   </footer>
 
   <script>
+    // TV viewport fix: alcuni browser TV restituiscono 100vh != window.innerHeight
+    (function() {
+      function applyViewport() {
+        document.body.style.width  = window.innerWidth  + 'px';
+        document.body.style.height = window.innerHeight + 'px';
+      }
+      applyViewport();
+      window.addEventListener('resize', applyViewport);
+    }());
+
     const COLORS = {
       total: '#4c7dff',
       fv: '#33d17a',
