@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-04-24 03:00",
+  "updated_at": "2026-04-24 16:43",
   "totale_vs_fv": {
     "consumo": 1578,
     "fotovoltaico": 658
@@ -100,6 +100,104 @@
     {
       "label": "23",
       "value": 42
+    }
+  ],
+  "fotovoltaico_totale": [
+    {
+      "label": "00",
+      "value": 0
+    },
+    {
+      "label": "01",
+      "value": 0
+    },
+    {
+      "label": "02",
+      "value": 0
+    },
+    {
+      "label": "03",
+      "value": 0
+    },
+    {
+      "label": "04",
+      "value": 0
+    },
+    {
+      "label": "05",
+      "value": 7
+    },
+    {
+      "label": "06",
+      "value": 26
+    },
+    {
+      "label": "07",
+      "value": 50
+    },
+    {
+      "label": "08",
+      "value": 62
+    },
+    {
+      "label": "09",
+      "value": 80
+    },
+    {
+      "label": "10",
+      "value": 86
+    },
+    {
+      "label": "11",
+      "value": 88
+    },
+    {
+      "label": "12",
+      "value": 82
+    },
+    {
+      "label": "13",
+      "value": 72
+    },
+    {
+      "label": "14",
+      "value": 52
+    },
+    {
+      "label": "15",
+      "value": 37
+    },
+    {
+      "label": "16",
+      "value": 14
+    },
+    {
+      "label": "17",
+      "value": 2
+    },
+    {
+      "label": "18",
+      "value": 0
+    },
+    {
+      "label": "19",
+      "value": 0
+    },
+    {
+      "label": "20",
+      "value": 0
+    },
+    {
+      "label": "21",
+      "value": 0
+    },
+    {
+      "label": "22",
+      "value": 0
+    },
+    {
+      "label": "23",
+      "value": 0
     }
   ],
   "consumo_parziale": {
