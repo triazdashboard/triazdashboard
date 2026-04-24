@@ -229,8 +229,8 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       backgroundColor:'transparent', animationDuration:900,
       legend: hasFv ? {top:4, right:12, itemGap:14, itemWidth:10, itemHeight:10, textStyle:{color:COLORS.muted, fontSize:13}} : {show:false},
       tooltip:{trigger:'axis', backgroundColor:'rgba(7,17,31,0.96)', borderWidth:0, textStyle:{color:'#fff'}, formatter: params => params.map(p => '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+p.color+';margin-right:5px"></span>'+p.seriesName+': <b>'+p.value+'</b> kWh').join('<br/>')},
-      grid:{left:55, right:18, top:hasFv?32:20, bottom:54},
-      xAxis:{type:'category', data:labels, boundaryGap:false, axisLabel:{color:COLORS.muted, fontSize:11, hideOverlap:false, rotate:30, interval:0}, axisLine:{lineStyle:{color:'rgba(255,255,255,0.12)'}}, splitLine:{show:true, lineStyle:{color:'rgba(255,255,255,0.06)', type:'dashed'}}},
+      grid:{left:55, right:18, top:hasFv?32:20, bottom:38},
+      xAxis:{type:'category', data:labels, boundaryGap:false, axisLabel:{color:COLORS.muted, fontSize:10, hideOverlap:true, rotate:0, interval:0}, axisLine:{lineStyle:{color:'rgba(255,255,255,0.12)'}}, splitLine:{show:true, lineStyle:{color:'rgba(255,255,255,0.06)', type:'dashed'}}},
       yAxis:{type:'value', axisLabel:{color:COLORS.muted, fontSize:13, hideOverlap:true}, splitLine:{lineStyle:{color:COLORS.grid}}},
       series
     });
@@ -250,8 +250,8 @@ c-13.232,0-24-10.768-24-24s10.768-24,24-24h24V64z"/>
       backgroundColor:'transparent', animationDuration:900,
       tooltip:{trigger:'axis', backgroundColor:'rgba(7,17,31,0.96)', borderWidth:0, textStyle:{color:'#fff'}},
       legend:{bottom:4, itemGap:26, itemWidth:12, itemHeight:12, textStyle:{color:COLORS.muted, fontSize:13}, formatter: name => ({'Consumo Gruppi Frigo':'Gruppi Frigo','Consumo Mensa':'Mensa','Ricarica Auto Elettriche':'Ricarica Auto','Consumo Edificio':'Edificio'}[name]||name)},
-      grid:{left:55, right:18, top:16, bottom:64},
-      xAxis:{type:'category', data:labels, boundaryGap:false, axisLabel:{color:COLORS.muted, fontSize:11, hideOverlap:false, rotate:30, interval:0}, axisLine:{lineStyle:{color:'rgba(255,255,255,0.12)'}}, splitLine:{show:true, lineStyle:{color:'rgba(255,255,255,0.04)'}}},
+      grid:{left:55, right:18, top:16, bottom:52},
+      xAxis:{type:'category', data:labels, boundaryGap:false, axisLabel:{color:COLORS.muted, fontSize:10, hideOverlap:true, rotate:0, interval:0}, axisLine:{lineStyle:{color:'rgba(255,255,255,0.12)'}}, splitLine:{show:true, lineStyle:{color:'rgba(255,255,255,0.04)'}}},
       yAxis:{type:'value', axisLabel:{color:COLORS.muted, fontSize:12}, splitLine:{lineStyle:{color:COLORS.grid}}},
       series
     });
