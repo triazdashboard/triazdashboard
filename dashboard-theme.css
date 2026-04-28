@@ -175,14 +175,13 @@ body {
 .t-nav { display: flex; gap: 6px; position: relative; z-index: 1; }
 .t-nav a {
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 3px 14px; border-radius: 6px;
-  border: 1.5px solid rgba(255,60,60,0.65);
-  color: #ff5555; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
+  padding: 3px 14px; border-radius: 7px; min-width: 52px;
+  background: var(--panel-inner); border: 1px solid var(--panel-border-2);
+  color: var(--text); font-size: 16px; font-weight: 700; letter-spacing: 0.06em;
   text-decoration: none; text-transform: uppercase;
-  background: rgba(255,40,40,0.08);
   transition: background 0.15s, border-color 0.15s;
 }
-.t-nav a:hover { background: rgba(255,40,40,0.22); border-color: rgba(255,60,60,0.9); }
+.t-nav a:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.25); }
 .kpi {
   padding: 3px 14px; border-radius: 7px;
   background: var(--panel-inner); border: 1px solid var(--panel-border-2);
