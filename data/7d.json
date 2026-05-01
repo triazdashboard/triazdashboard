@@ -1,22 +1,10 @@
 {
-  "updated_at": "2026-04-28 03:00",
+  "updated_at": "2026-05-01 08:51",
   "totale_vs_fv": {
-    "consumo": 9546,
-    "fotovoltaico": 4073
+    "consumo": 9621,
+    "fotovoltaico": 4386
   },
   "consumo_totale": [
-    {
-      "label": "Mar",
-      "value": 1674
-    },
-    {
-      "label": "Mer",
-      "value": 1548
-    },
-    {
-      "label": "Gio",
-      "value": 1578
-    },
     {
       "label": "Ven",
       "value": 1473
@@ -32,21 +20,21 @@
     {
       "label": "Lun",
       "value": 1662
-    }
-  ],
-  "fotovoltaico_totale": [
+    },
     {
       "label": "Mar",
-      "value": 503
+      "value": 1590
     },
     {
       "label": "Mer",
-      "value": 302
+      "value": 1650
     },
     {
       "label": "Gio",
-      "value": 658
-    },
+      "value": 1635
+    }
+  ],
+  "fotovoltaico_totale": [
     {
       "label": "Ven",
       "value": 648
@@ -62,54 +50,66 @@
     {
       "label": "Lun",
       "value": 639
+    },
+    {
+      "label": "Mar",
+      "value": 659
+    },
+    {
+      "label": "Mer",
+      "value": 633
+    },
+    {
+      "label": "Gio",
+      "value": 484
     }
   ],
   "consumo_parziale": {
     "labels": [
-      "Mar",
-      "Mer",
-      "Gio",
       "Ven",
       "Sab",
       "Dom",
-      "Lun"
+      "Lun",
+      "Mar",
+      "Mer",
+      "Gio"
     ],
     "series": {
       "Consumo Gruppi Frigo": [
-        400,
-        334,
-        330,
         334,
         73,
         82,
-        399
+        399,
+        414,
+        417,
+        400
       ],
       "Consumo Mensa": [
-        207,
-        222,
-        201,
         172,
         47,
         47,
-        193
+        193,
+        189,
+        195,
+        179
       ],
       "Ricarica Auto Elettriche": [
-        44,
-        9,
-        39,
         41,
         0,
         0,
-        62
+        62,
+        8,
+        60,
+        57
       ],
       "Consumo Edificio": [
-        1023,
-        983,
-        1008,
         926,
         678,
         684,
-        1008
+        1008,
+        979,
+        978,
+        999
       ]
     }
   }
