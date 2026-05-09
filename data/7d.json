@@ -1,22 +1,10 @@
 {
-  "updated_at": "2026-05-06 03:00",
+  "updated_at": "2026-05-09 10:15",
   "totale_vs_fv": {
-    "consumo": 9384,
-    "fotovoltaico": 3178
+    "consumo": 9807,
+    "fotovoltaico": 3215
   },
   "consumo_totale": [
-    {
-      "label": "Mer",
-      "value": 1650
-    },
-    {
-      "label": "Gio",
-      "value": 1635
-    },
-    {
-      "label": "Ven",
-      "value": 1119
-    },
     {
       "label": "Sab",
       "value": 834
@@ -32,21 +20,21 @@
     {
       "label": "Mar",
       "value": 1605
-    }
-  ],
-  "fotovoltaico_totale": [
+    },
     {
       "label": "Mer",
-      "value": 633
+      "value": 1581
     },
     {
       "label": "Gio",
-      "value": 484
+      "value": 1659
     },
     {
       "label": "Ven",
-      "value": 104
-    },
+      "value": 1587
+    }
+  ],
+  "fotovoltaico_totale": [
     {
       "label": "Sab",
       "value": 672
@@ -62,54 +50,66 @@
     {
       "label": "Mar",
       "value": 203
+    },
+    {
+      "label": "Mer",
+      "value": 329
+    },
+    {
+      "label": "Gio",
+      "value": 597
+    },
+    {
+      "label": "Ven",
+      "value": 332
     }
   ],
   "consumo_parziale": {
     "labels": [
-      "Mer",
-      "Gio",
-      "Ven",
       "Sab",
       "Dom",
       "Lun",
-      "Mar"
+      "Mar",
+      "Mer",
+      "Gio",
+      "Ven"
     ],
     "series": {
       "Consumo Gruppi Frigo": [
-        417,
-        400,
-        367,
         112,
         138,
         368,
-        317
+        317,
+        320,
+        404,
+        378
       ],
       "Consumo Mensa": [
-        195,
-        179,
-        60,
         42,
         43,
         203,
-        213
+        213,
+        214,
+        203,
+        170
       ],
       "Ricarica Auto Elettriche": [
-        60,
-        57,
-        0,
         1,
         1,
         93,
-        58
+        58,
+        12,
+        30,
+        79
       ],
       "Consumo Edificio": [
-        978,
-        999,
-        692,
         679,
         679,
         1016,
-        1017
+        1017,
+        1035,
+        1022,
+        960
       ]
     }
   }
