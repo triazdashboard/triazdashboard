@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-05-10 03:00",
+  "updated_at": "2026-05-11 07:29",
   "totale_vs_fv": {
-    "consumo": 1029,
-    "fotovoltaico": 580
+    "consumo": 1128,
+    "fotovoltaico": 187
   },
   "consumo_totale": [
     {
@@ -19,7 +19,7 @@
     },
     {
       "label": "03",
-      "value": 33
+      "value": 30
     },
     {
       "label": "04",
@@ -27,35 +27,35 @@
     },
     {
       "label": "05",
-      "value": 48
+      "value": 51
     },
     {
       "label": "06",
-      "value": 57
+      "value": 54
     },
     {
       "label": "07",
-      "value": 51
+      "value": 54
     },
     {
       "label": "08",
-      "value": 54
-    },
-    {
-      "label": "09",
-      "value": 54
-    },
-    {
-      "label": "10",
       "value": 51
     },
     {
+      "label": "09",
+      "value": 51
+    },
+    {
+      "label": "10",
+      "value": 54
+    },
+    {
       "label": "11",
-      "value": 57
+      "value": 54
     },
     {
       "label": "12",
-      "value": 54
+      "value": 51
     },
     {
       "label": "13",
@@ -71,35 +71,35 @@
     },
     {
       "label": "16",
-      "value": 54
+      "value": 51
     },
     {
       "label": "17",
-      "value": 33
+      "value": 51
     },
     {
       "label": "18",
-      "value": 30
+      "value": 54
     },
     {
       "label": "19",
-      "value": 33
+      "value": 54
     },
     {
       "label": "20",
-      "value": 33
+      "value": 57
     },
     {
       "label": "21",
-      "value": 36
+      "value": 54
     },
     {
       "label": "22",
-      "value": 30
+      "value": 33
     },
     {
       "label": "23",
-      "value": 30
+      "value": 33
     }
   ],
   "fotovoltaico_totale": [
@@ -121,59 +121,59 @@
     },
     {
       "label": "04",
-      "value": 1
+      "value": 2
     },
     {
       "label": "05",
-      "value": 13
+      "value": 6
     },
     {
       "label": "06",
-      "value": 31
+      "value": 20
     },
     {
       "label": "07",
-      "value": 52
+      "value": 16
     },
     {
       "label": "08",
-      "value": 67
+      "value": 9
     },
     {
       "label": "09",
-      "value": 77
+      "value": 19
     },
     {
       "label": "10",
-      "value": 83
+      "value": 34
     },
     {
       "label": "11",
-      "value": 54
+      "value": 7
     },
     {
       "label": "12",
-      "value": 61
+      "value": 8
     },
     {
       "label": "13",
-      "value": 60
-    },
-    {
-      "label": "14",
-      "value": 39
-    },
-    {
-      "label": "15",
-      "value": 26
-    },
-    {
-      "label": "16",
       "value": 13
     },
     {
+      "label": "14",
+      "value": 22
+    },
+    {
+      "label": "15",
+      "value": 22
+    },
+    {
+      "label": "16",
+      "value": 7
+    },
+    {
       "label": "17",
-      "value": 3
+      "value": 2
     },
     {
       "label": "18",
@@ -232,39 +232,32 @@
         1,
         2,
         1,
-        1,
-        1,
-        20,
-        23,
-        23,
-        24,
-        23,
-        23,
-        24,
-        23,
-        25,
-        23,
-        23,
-        23,
-        3,
-        1,
-        1,
         2,
         1,
-        1,
-        2
+        19,
+        24,
+        23,
+        24,
+        23,
+        23,
+        24,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        22,
+        24,
+        23,
+        23,
+        2,
+        1
       ],
       "Consumo Mensa": [
-        2,
-        2,
-        1,
-        2,
         1,
         3,
         1,
-        2,
-        2,
-        2,
         1,
         3,
         1,
@@ -278,7 +271,14 @@
         1,
         3,
         1,
-        2
+        2,
+        1,
+        3,
+        1,
+        2,
+        2,
+        2,
+        1
       ],
       "Ricarica Auto Elettriche": [
         0,
@@ -307,30 +307,30 @@
         0
       ],
       "Consumo Edificio": [
-        30,
-        29,
+        31,
+        28,
         34,
-        30,
-        28,
-        25,
-        33,
+        27,
         26,
+        31,
         28,
+        30,
+        24,
+        27,
         29,
-        27,
-        30,
-        30,
-        27,
-        27,
         28,
+        26,
         30,
-        28,
+        25,
+        30,
+        26,
         27,
-        30,
-        30,
+        29,
+        29,
         32,
-        28,
-        26
+        29,
+        29,
+        31
       ]
     }
   }
